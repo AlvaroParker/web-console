@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/AlvaroParker/web-console/internal/api/models"
 	"github.com/gorilla/websocket"
@@ -24,14 +25,25 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	hash := request.URL.Query().Get("containerHash")
+	raw_width := request.URL.Query().Get("width")
+	raw_height := request.URL.Query().Get("height")
+	width, errW := strconv.Atoi(raw_width)
+	height, errH := strconv.Atoi(raw_height)
+
+	if hash == "" || raw_width == "" || raw_height == "" || errW != nil || errH != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		log.Println("Missing query parameters")
+		return
+	}
 	// Create a new WebContainer
-	webContainer, errorNewWC := models.NewWebContainer()
+	webContainer, errorNewWC := models.NewWebContainer(hash)
 	// Check if there was an error while creating the new WebContainer
 	if errorNewWC != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintln(os.Stderr, "Error while creating the WebContainer: ", errorNewWC)
 	}
-	errorCreate := webContainer.Create()
+	errorCreate, _ := webContainer.Create()
 	if errorCreate != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintln(os.Stderr, "Error while creating the container: ", errorCreate)
@@ -40,7 +52,9 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 	// Upgrade the connection to a web socket
 	log.Println("Upgrading connection to web socket...")
 	// Blindly accept all origins: TODO: Change this to a more secure way
-	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+	upgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
+	}
 
 	ws_conn, err := upgrader.Upgrade(writer, request, nil)
 	if err != nil {
@@ -55,6 +69,6 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 
 	defer ws_conn.Close()
 	fmt.Println("Connection upgraded, attaching container...")
-	webContainer.AttachContainer(false, ws_conn)
+	webContainer.AttachContainer(true, ws_conn, width, height)
 	defer webContainer.Close()
 }
