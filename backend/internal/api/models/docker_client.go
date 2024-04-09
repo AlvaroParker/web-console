@@ -21,20 +21,20 @@ const (
 	Debian    ImageType = "debian:stable"
 )
 
+// WebContainer struct to configure attached containers
 type WebContainer struct {
-	/// The command to run in the container, usually a shell
-	Command string
-	/// The image to use for the container
-	Image      ImageType
-	AttachIO   bool
-	AutoRemove bool
-	Name       *string
-	client     *client.Client
-	context    context.Context
-	id         *string
+	Command    string          // Command to run in the container
+	Image      ImageType       // Image to use for the container
+	AttachIO   bool            // Attach IO to the container
+	AutoRemove bool            // If we should autoremove when the container stops
+	Name       *string         // Optional name for the container
+	client     *client.Client  // Docker client
+	context    context.Context // Context
+	id         *string         // The id of the container, either provided or generated
 }
 
-func NewWebContainer(hash string) (*WebContainer, error) {
+// NewWebContainer creates a new WebContainer
+func NewWebContainer(hash *string) (*WebContainer, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return nil, err
@@ -47,38 +47,47 @@ func NewWebContainer(hash string) (*WebContainer, error) {
 		Name:       nil,
 		context:    context.Background(),
 		client:     cli,
-		id:         &hash,
+		id:         hash,
 	}, nil
 }
 
-func (wc *WebContainer) Create() (error, *string) {
+func (wc *WebContainer) Start() error {
+	_, err := wc.client.ContainerInspect(wc.context, *wc.id)
+	// Container exists
+	if err == nil {
+		wc.client.ContainerStart(wc.context, *wc.id, container.StartOptions{})
+
+		id_response, errExecCreate := wc.client.ContainerExecCreate(wc.context, *wc.id, types.ExecConfig{
+			Cmd: []string{wc.Command},
+		})
+		if errExecCreate != nil {
+			wc.client.ContainerRemove(wc.context, *wc.id, container.RemoveOptions{})
+			return errExecCreate
+		}
+
+		errExecStart := wc.client.ContainerExecStart(wc.context, id_response.ID, types.ExecStartCheck{})
+		if errExecStart != nil {
+			wc.client.ContainerRemove(wc.context, *wc.id, container.RemoveOptions{})
+			return errExecStart
+		}
+		return nil
+	}
+	return err
+}
+
+// / Returns the ID of the new container or an error
+func (wc *WebContainer) Create() (*string, error) {
 	// Check if we have an ID and if the container exists
 	if wc.id != nil {
-		_, err := wc.client.ContainerInspect(wc.context, *wc.id)
-		// Container exists
+		err := wc.Start()
 		if err == nil {
-			wc.client.ContainerStart(wc.context, *wc.id, container.StartOptions{})
-
-			id_response, errExecCreate := wc.client.ContainerExecCreate(wc.context, *wc.id, types.ExecConfig{
-				Cmd: []string{wc.Command},
-			})
-			if errExecCreate != nil {
-				wc.client.ContainerRemove(wc.context, *wc.id, container.RemoveOptions{})
-				return errExecCreate, nil
-			}
-
-			errExecStart := wc.client.ContainerExecStart(wc.context, id_response.ID, types.ExecStartCheck{})
-			if errExecStart != nil {
-				wc.client.ContainerRemove(wc.context, *wc.id, container.RemoveOptions{})
-				return errExecStart, nil
-			}
-			return nil, wc.id
+			return wc.id, nil
 		}
 	}
 
 	var containerName string
 	if wc.client == nil || wc.context == nil {
-		return errors.New("client or context is nil"), nil
+		return nil, errors.New("client or context is nil")
 	}
 
 	containerConfig := container.Config{
@@ -100,28 +109,29 @@ func (wc *WebContainer) Create() (error, *string) {
 
 	container_res, err := wc.client.ContainerCreate(wc.context, &containerConfig, &hostConfig, nil, nil, containerName)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
-
-	wc.client.ContainerStart(wc.context, container_res.ID, container.StartOptions{})
-
-	id_response, errExecCreate := wc.client.ContainerExecCreate(wc.context, container_res.ID, types.ExecConfig{
-		Cmd: []string{wc.Command},
-	})
-	if errExecCreate != nil {
-		wc.client.ContainerRemove(wc.context, container_res.ID, container.RemoveOptions{})
-		return errExecCreate, nil
-	}
-
-	errExecStart := wc.client.ContainerExecStart(wc.context, id_response.ID, types.ExecStartCheck{})
-	if errExecStart != nil {
-		wc.client.ContainerRemove(wc.context, container_res.ID, container.RemoveOptions{})
-		return errExecStart, nil
-	}
-
+	// if start {
+	// 	wc.client.ContainerStart(wc.context, container_res.ID, container.StartOptions{})
+	//
+	// 	id_response, errExecCreate := wc.client.ContainerExecCreate(wc.context, container_res.ID, types.ExecConfig{
+	// 		Cmd: []string{wc.Command},
+	// 	})
+	// 	if errExecCreate != nil {
+	// 		wc.client.ContainerRemove(wc.context, container_res.ID, container.RemoveOptions{})
+	// 		return nil, errExecCreate
+	// 	}
+	//
+	// 	errExecStart := wc.client.ContainerExecStart(wc.context, id_response.ID, types.ExecStartCheck{})
+	// 	if errExecStart != nil {
+	// 		wc.client.ContainerRemove(wc.context, container_res.ID, container.RemoveOptions{})
+	// 		return nil, errExecStart
+	// 	}
+	// }
+	//
 	wc.id = &container_res.ID
 
-	return nil, wc.id
+	return wc.id, nil
 }
 
 func (wc *WebContainer) AttachContainer(resize bool, wsConn *websocket.Conn, width int, height int) error {
@@ -132,7 +142,6 @@ func (wc *WebContainer) AttachContainer(resize bool, wsConn *websocket.Conn, wid
 		Stream: true,
 	}
 
-	log.Println("Attaching container with id ", *wc.id)
 	resp, errAttach := wc.client.ContainerAttach(wc.context, *wc.id, attachOptions)
 	if resize {
 		wc.client.ContainerResize(wc.context, *wc.id, container.ResizeOptions{
@@ -162,7 +171,7 @@ func (wc *WebContainer) AttachContainer(resize bool, wsConn *websocket.Conn, wid
 func (wc *WebContainer) Close() {
 	err := wc.client.ContainerStop(wc.context, *wc.id, container.StopOptions{})
 	if err != nil {
-		log.Println("Error while stopping the container: ", err)
+		log.Println("[WebContainer.Close] Error while stopping the container: ", err)
 	}
 }
 

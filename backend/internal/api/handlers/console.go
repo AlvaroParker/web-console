@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -24,8 +23,13 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	email, errAuth := models.Middleware(request)
+	if errAuth != nil {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 
-	hash := request.URL.Query().Get("containerHash")
+	hash := request.URL.Query().Get("hash")
 	raw_width := request.URL.Query().Get("width")
 	raw_height := request.URL.Query().Get("height")
 	width, errW := strconv.Atoi(raw_width)
@@ -33,24 +37,26 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 
 	if hash == "" || raw_width == "" || raw_height == "" || errW != nil || errH != nil {
 		writer.WriteHeader(http.StatusBadRequest)
-		log.Println("Missing query parameters")
+		return
+	}
+	if !models.ValidateContainer(email, hash) {
+		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	// Create a new WebContainer
-	webContainer, errorNewWC := models.NewWebContainer(hash)
+	webContainer, errorNewWC := models.NewWebContainer(&hash)
 	// Check if there was an error while creating the new WebContainer
 	if errorNewWC != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintln(os.Stderr, "Error while creating the WebContainer: ", errorNewWC)
 	}
-	errorCreate, _ := webContainer.Create()
+	errorCreate := webContainer.Start()
 	if errorCreate != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintln(os.Stderr, "Error while creating the container: ", errorCreate)
 	}
 
 	// Upgrade the connection to a web socket
-	log.Println("Upgrading connection to web socket...")
 	// Blindly accept all origins: TODO: Change this to a more secure way
 	upgrader.CheckOrigin = func(r *http.Request) bool {
 		return true
