@@ -16,6 +16,14 @@ func comparePassword(hashedPassword string, password string) bool {
 }
 
 func LoginHandler(writer http.ResponseWriter, request *http.Request) {
+	// CORS
+	models.CorsHeaders(writer, request)
+	if request.Method == http.MethodOptions {
+		writer.Header().Set("Access-Control-Allow-Methods", "POST")
+		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
 	if request.Method != http.MethodPost {
 		writer.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -56,6 +64,13 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 var bcryptCost = 10
 
 func CreateAccount(writer http.ResponseWriter, request *http.Request) {
+	models.CorsHeaders(writer, request)
+	if request.Method == http.MethodOptions {
+		writer.Header().Set("Access-Control-Allow-Methods", "POST")
+		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
 	if request.Method != http.MethodPost {
 		writer.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -79,6 +94,13 @@ func CreateAccount(writer http.ResponseWriter, request *http.Request) {
 }
 
 func AuthUser(writer http.ResponseWriter, request *http.Request) {
+	models.CorsHeaders(writer, request)
+	if request.Method == http.MethodOptions {
+		writer.Header().Set("Access-Control-Allow-Methods", "POST")
+		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
 	_, err := models.Middleware(request)
 	if err != nil {
 		writer.WriteHeader(http.StatusUnauthorized)

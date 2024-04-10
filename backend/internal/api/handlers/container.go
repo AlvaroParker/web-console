@@ -9,11 +9,31 @@ import (
 	"github.com/AlvaroParker/web-console/internal/api/models"
 )
 
-var allowedContainers = []string{"ubuntu:22.04"}
+var allowedContainers = []models.Container{
+	{
+		Image: "ubuntu",
+		Tag:   "22.04",
+	},
+	{
+		Image: "debian",
+		Tag:   "stable",
+	},
+	{
+		Image: "python",
+		Tag:   "3.11",
+	},
+}
 
 const LIMIT_CONTAINERS = 8
 
 func ContainerHandler(writer http.ResponseWriter, request *http.Request) {
+	models.CorsHeaders(writer, request)
+	if request.Method == http.MethodOptions {
+		writer.Header().Set("Access-Control-Allow-Methods", "POST")
+		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
 	switch request.Method {
 	case http.MethodPost:
 		NewContainer(writer, request)
@@ -170,7 +190,7 @@ func isAllowed(container models.Container) bool {
 	log.Println("[handlers.isAllowed] Checking if container is allowed: ", container)
 	fullImage := container.Image + ":" + container.Tag
 	for _, allowedContainer := range allowedContainers {
-		if allowedContainer == fullImage {
+		if allowedContainer.Image+":"+allowedContainer.Tag == fullImage {
 			return true
 		}
 	}

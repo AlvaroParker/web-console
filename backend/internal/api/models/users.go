@@ -94,8 +94,9 @@ func GenerateCookie(email string) (*http.Cookie, error) {
 		Name:     "session",
 		Value:    randomCookie,
 		HttpOnly: false,
-		Secure:   false,
+		Secure:   true,
 		Expires:  time.Now().Add(24 * time.Hour),
+		SameSite: http.SameSiteNoneMode,
 	}
 	_, errDB := database.DB.Exec("INSERT INTO sessions (sessionid, email) VALUES ($1, $2)", randomCookie, email)
 	if errDB != nil {
@@ -103,4 +104,9 @@ func GenerateCookie(email string) (*http.Cookie, error) {
 	}
 
 	return cookie, nil
+}
+
+func CorsHeaders(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Access-Control-Allow-Origin", request.Header.Get("Origin"))
+	writer.Header().Set("Access-Control-Allow-Credentials", "true")
 }
