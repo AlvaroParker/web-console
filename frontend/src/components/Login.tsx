@@ -1,7 +1,6 @@
 import React from "react"
 import { Login } from "../services/users"
 import { useNavigate } from "react-router-dom"
-import { checkAuth } from "./util"
 
 export function LoginComponent() {
     const [email, setEmail] = React.useState("")
@@ -9,7 +8,6 @@ export function LoginComponent() {
     const [showErr, setShowErr] = React.useState(false)
     // Navigate
     const navigate = useNavigate()
-    checkAuth(navigate)
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         e.preventDefault()

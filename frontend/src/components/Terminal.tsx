@@ -8,7 +8,7 @@ import { checkAuth } from './util'
 export function TerminalComponent({ wsURL }: { wsURL: string }) {
     const params = useParams()
     console.log(params.containerId)
-    const [endTerminal, setEndTerminal] = useState(false)
+    const [endTerminal, _] = useState(false)
     const initialized = useRef(false)
     const navigate = useNavigate()
 

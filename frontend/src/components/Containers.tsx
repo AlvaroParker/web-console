@@ -1,7 +1,6 @@
 import React, { useEffect } from "react"
-import { ContainerRes, ListContainers } from "../services/container"
+import { ContainerRes, ListContainers, ListContainersRes } from "../services/container"
 import { useNavigate } from "react-router-dom"
-import { checkAuth } from "./util"
 
 function capitalize(word: string): string {
     return word.charAt(0).toUpperCase() + word.slice(1);
@@ -11,12 +10,27 @@ function capitalize(word: string): string {
 export function ContainersComponent() {
     const [containers, setContainers] = React.useState<ContainerRes[] | null>(null)
     const navigate = useNavigate()
-    checkAuth(navigate)
 
     useEffect(() => {
         ListContainers().then((res) => {
-            if (res) {
-                setContainers(res)
+            const [containers, response] = res
+            switch (response) {
+                case ListContainersRes.OK:
+                    setContainers(containers)
+                    break;
+                case ListContainersRes.NO_CONTENT:
+                    console.log("No content")
+                    // No containers, do nothing
+                    break;
+                case ListContainersRes.UNAUTHORIZED:
+                    navigate("/login")
+                    break;
+                case ListContainersRes.INTERNAL_SERVER_ERROR:
+                    // TODO
+                    break;
+                case ListContainersRes.UNKNOWN:
+                    // TODO
+                    break;
             }
         })
     }, [])

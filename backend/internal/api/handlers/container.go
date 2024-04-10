@@ -51,6 +51,13 @@ func ContainerHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 // Create new containers
+// Possible HTTP response codes:
+// - 201: Created
+// - 401: Unauthorized
+// - 500: Internal Server Error
+// - 405: Method Not Allowed
+// - 403: Forbidden
+// - 400: Bad Request
 func NewContainer(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
 		writer.WriteHeader(http.StatusMethodNotAllowed)
@@ -114,6 +121,11 @@ func NewContainer(writer http.ResponseWriter, request *http.Request) {
 }
 
 // Delete existing containers
+// Possible HTTP response codes:
+// - 200: OK
+// - 401: Unauthorized
+// - 404: Not Found
+// - 500: Internal Server Error
 func DeleteContainer(writer http.ResponseWriter, request *http.Request) {
 	// Check if the method is DELETE
 	if request.Method != http.MethodDelete {
@@ -147,6 +159,12 @@ func DeleteContainer(writer http.ResponseWriter, request *http.Request) {
 }
 
 // List existing containers
+// Possible HTTP resopnse codes:
+// - 200: OK
+// - 204: No Content
+// - 401: Unauthorized
+// - 405: Method Not Allowed
+// - 500: Internal Server Error
 func ListContainers(writer http.ResponseWriter, request *http.Request) {
 	// Check if the method is GET
 	if request.Method != http.MethodGet {

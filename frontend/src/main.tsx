@@ -11,6 +11,7 @@ import { TerminalComponent } from './components/Terminal.tsx'
 import { Sidebar } from './components/Sidebar.tsx'
 import { API_ADDRESS } from './services/consts.ts'
 import { NotFound } from './components/404.tsx'
+import { NewContainer } from './components/NewContainer.tsx'
 
 const router = createBrowserRouter([
   {
@@ -36,6 +37,16 @@ const router = createBrowserRouter([
           <TerminalComponent wsURL={API_ADDRESS}/> 
         </div>
     </>,
+  },
+  {
+    path: "/create",
+    element: 
+    <>
+        <Sidebar />
+        <div className="flex-grow mx-5">
+          <NewContainer/>
+        </div>
+    </>
   },
   {
     path: "*",

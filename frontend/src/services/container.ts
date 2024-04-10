@@ -14,62 +14,124 @@ export interface ContainerRes {
     tag: string;
 }
 
-enum DeleteRes {
+export enum DeleteContainerRes {
     OK = 200,
+    UNAUTHORIZED = 401,
     NOT_FOUND = 404,
-    ERROR = 500
+    INTERNAL_SERVER_ERROR = 500,
+    UNKNOWN = 0
+}
+
+export enum NewContainerRes {
+    CREATED = 201,
+    BAD_REQUEST = 400,
+    UNAUTHORIZED = 401,
+    FORBIDDEN = 403,
+    INTERNAL_SERVER_ERROR = 500,
+    UNKOWN = 0
+}
+
+export enum ListContainersRes {
+    OK = 200,
+    NO_CONTENT = 204,
+    UNAUTHORIZED = 401,
+    INTERNAL_SERVER_ERROR = 500,
+    UNKNOWN = 0
 }
 
 
-const NewContainer = async (container: Container): Promise<boolean> => {
+const NewContainer = async (container: Container): Promise<NewContainerRes> => {
     try {
         const response = await axios.post(`${API_URL}/container`, container)
-        if (response.status === 201 || response.status === 200) {
-            return true
+        switch (response.status) {
+            case 201 || 200:
+                return NewContainerRes.CREATED
+            case 400:
+                return NewContainerRes.BAD_REQUEST
+            case 401:
+                return NewContainerRes.UNAUTHORIZED
+            case 403:
+                return NewContainerRes.FORBIDDEN
+            case 500:
+                return NewContainerRes.INTERNAL_SERVER_ERROR
         }
     } catch (error) {
         if (axios.isAxiosError(error)) {
             console.log(error.message)
+            switch (error.response?.status) {
+                case 400:
+                    return NewContainerRes.BAD_REQUEST
+                case 401:
+                    return NewContainerRes.UNAUTHORIZED
+                case 403:
+                    return NewContainerRes.FORBIDDEN
+                case 500:
+                    return NewContainerRes.INTERNAL_SERVER_ERROR
+            }
         }
     }
-    return false
+    return NewContainerRes.UNKOWN
 }
 
 
 
-const ListContainers = async (): Promise<ContainerRes[] | null> => {
+const ListContainers = async (): Promise<[ContainerRes[] | null, ListContainersRes]> => {
     try {
         const response = await axios.get(`${API_URL}/container`)
-        if (response.status === 200 || response.status === 201) {
-            return response.data
+        switch (response.status) {
+            case 200:
+                return [response.data, ListContainersRes.OK]
+            case 204:
+                return [null, ListContainersRes.NO_CONTENT]
+            case 401:
+                return [null, ListContainersRes.UNAUTHORIZED]
+            case 500:
+                return [null, ListContainersRes.INTERNAL_SERVER_ERROR]
         }
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            console.log(error.message)
+            switch (error.response?.status) {
+                case 401:
+                    return [null, ListContainersRes.UNAUTHORIZED]
+                case 500:
+                    return [null, ListContainersRes.INTERNAL_SERVER_ERROR]
+            }
         }
     }
-    return null
+    return [null, ListContainersRes.UNKNOWN]
 }
 
-const DeleteContainer = async(containerId: string): Promise<DeleteRes> => {
+const DeleteContainer = async(containerId: string): Promise<DeleteContainerRes> => {
     try {
         const response = await axios.delete(`${API_URL}/container/${containerId}`)
-        if (response.status == 200) {
-            return DeleteRes.OK
-        } else if (response.status == 404) {
-            return DeleteRes.NOT_FOUND
-        } 
+        switch (response.status) {
+            case 200:
+                return DeleteContainerRes.OK
+            case 401:
+                return DeleteContainerRes.UNAUTHORIZED
+            case 404:
+                return DeleteContainerRes.NOT_FOUND
+            case 500:
+                return DeleteContainerRes.INTERNAL_SERVER_ERROR
+        }
     } catch (error) {
         if (axios.isAxiosError(error)) {
+            switch (error.status) {
+                case 401:
+                    return DeleteContainerRes.UNAUTHORIZED
+                case 404:
+                    return DeleteContainerRes.NOT_FOUND
+                case 500:
+                    return DeleteContainerRes.INTERNAL_SERVER_ERROR
+            }
             console.log(error.message)
         }
     } 
-    return DeleteRes.ERROR
+    return DeleteContainerRes.UNKNOWN
 }
 
 export {
     NewContainer,
     ListContainers,
     DeleteContainer,
-    DeleteRes
 }
