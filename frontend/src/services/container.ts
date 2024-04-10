@@ -1,6 +1,8 @@
 import axios from "axios";
 import { API_URL } from "./consts";
 
+axios.defaults.withCredentials = true
+
 export interface Container {
     image: string;
     tag: string
@@ -37,7 +39,7 @@ const NewContainer = async (container: Container): Promise<boolean> => {
 
 const ListContainers = async (): Promise<ContainerRes[] | null> => {
     try {
-        const response = await axios.get(`${API_URL}/containers`)
+        const response = await axios.get(`${API_URL}/container`)
         if (response.status === 200 || response.status === 201) {
             return response.data
         }

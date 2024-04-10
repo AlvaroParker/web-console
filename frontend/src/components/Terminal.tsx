@@ -2,10 +2,17 @@ import { ITerminalOptions, ITheme, Terminal } from '@xterm/xterm'
 import './Terminal.css'
 import { FitAddon } from '@xterm/addon-fit'
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { checkAuth } from './util'
 
 export function TerminalComponent({ wsURL }: { wsURL: string }) {
+    const params = useParams()
+    console.log(params.containerId)
     const [endTerminal, setEndTerminal] = useState(false)
     const initialized = useRef(false)
+    const navigate = useNavigate()
+
+    checkAuth(navigate)
     useEffect(() => {
         if (!initialized.current) {
             initialized.current = true
@@ -26,7 +33,7 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
 
         fitAddon.fit()
         const { rows, cols } = term
-        const ws = new WebSocket("ws://xdd")
+        const ws = new WebSocket(`ws://${wsURL}/console/ws?hash=${params.containerId}&width=${cols}&height=${rows}`)
 
         ws.addEventListener('open', () => {
             console.log("Web-console socket opened")
