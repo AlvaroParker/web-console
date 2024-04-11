@@ -14,23 +14,30 @@ type Terminal struct {
 	Email       string `json:"email"`
 	Image       string `json:"image"`
 	Tag         string `json:"tag"`
+	Name        string `json:"name"`
 }
 
 type TerminalRes struct {
 	ContainerID string `json:"containerid"`
 	Image       string `json:"image"`
 	Tag         string `json:"tag"`
+	Name        string `json:"name"`
 }
 
+// func NewWebContainer(command string, image ImageType, autoRemove bool, name *string, networkEnabled bool) (*WebContainer, error) {
 type Container struct {
-	Image string `json:"image"`
-	Tag   string `json:"tag"`
+	Image          string  `json:"image"`
+	Tag            string  `json:"tag"`
+	AutoRemove     bool    `json:"auto_remove"`
+	Name           *string `json:"name"`
+	NetworkEnabled bool    `json:"network_enabled"`
+	Command        *string `json:"command"`
 }
 
 func ValidateContainer(email string, hash string) bool {
 	var terminal Terminal
 	query := database.DB.QueryRow("SELECT * FROM terminals WHERE email = $1 and containerid = $2", email, hash)
-	queryErr := query.Scan(&terminal.Id, &terminal.ContainerID, &terminal.Email, &terminal.Image, &terminal.Tag)
+	queryErr := query.Scan(&terminal.Id, &terminal.ContainerID, &terminal.Email, &terminal.Image, &terminal.Tag, &terminal.Name)
 	if queryErr != nil {
 		return false
 	}
@@ -38,7 +45,7 @@ func ValidateContainer(email string, hash string) bool {
 }
 
 func GetTerminals(email string) ([]TerminalRes, error) {
-	rowsDB, errorDb := database.DB.Query("SELECT containerid, image,tag FROM terminals WHERE email = $1", email)
+	rowsDB, errorDb := database.DB.Query("SELECT containerid, image,tag, name FROM terminals WHERE email = $1", email)
 	if errorDb != nil {
 		return nil, errorDb
 	}
@@ -47,7 +54,7 @@ func GetTerminals(email string) ([]TerminalRes, error) {
 	var terminals []TerminalRes
 	for rowsDB.Next() {
 		var terminal TerminalRes
-		if errScan := rowsDB.Scan(&terminal.ContainerID, &terminal.Image, &terminal.Tag); errScan != nil {
+		if errScan := rowsDB.Scan(&terminal.ContainerID, &terminal.Image, &terminal.Tag, &terminal.Name); errScan != nil {
 			return nil, errScan
 		}
 
@@ -59,7 +66,7 @@ func GetTerminals(email string) ([]TerminalRes, error) {
 
 // Add a container ID to the database
 func AddContainerDB(email string, containerID string, container Container) error {
-	_, err := database.DB.Exec("INSERT INTO terminals (containerid, email, image, tag) VALUES ($1, $2, $3, $4)", containerID, email, container.Image, container.Tag)
+	_, err := database.DB.Exec("INSERT INTO terminals (containerid, email, image, tag, name) VALUES ($1, $2, $3, $4, $5)", containerID, email, container.Image, container.Tag, container.Name)
 	return err
 }
 

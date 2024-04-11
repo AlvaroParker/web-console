@@ -110,3 +110,17 @@ func CorsHeaders(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Access-Control-Allow-Origin", request.Header.Get("Origin"))
 	writer.Header().Set("Access-Control-Allow-Credentials", "true")
 }
+
+func DeleteSession(sessionCookie string) error {
+	_, errDB := database.DB.Exec("DELETE FROM sessions WHERE sessionid = $1", sessionCookie)
+
+	if errDB != nil {
+		return errDB
+	}
+	return nil
+}
+
+func ExpireCookie() time.Time {
+	// Send beggining of times
+	return time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+}

@@ -51,7 +51,7 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	// Create a new WebContainer
-	webContainer, errorNewWC := models.NewWebContainer(&hash)
+	webContainer, errorNewWC := models.DefaultWebContainer(&hash)
 	// Check if there was an error while creating the new WebContainer
 	if errorNewWC != nil {
 		writer.WriteHeader(http.StatusInternalServerError)

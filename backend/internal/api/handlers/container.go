@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/AlvaroParker/web-console/internal/api/models"
+	"github.com/docker/docker/errdefs"
 )
 
 var allowedContainers = []models.Container{
@@ -96,7 +97,12 @@ func NewContainer(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	webContainer, errWc := models.NewWebContainer(nil)
+	if container.Image == "" || container.Tag == "" || container.Command == nil || container.Name == nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	webContainer, errWc := models.NewWebContainer(container)
 	if errWc != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		log.Println("[handlers.NewContainer] Error while creating the WebContainer: ", errWc)
@@ -105,6 +111,15 @@ func NewContainer(writer http.ResponseWriter, request *http.Request) {
 
 	containerID, errCreate := webContainer.Create()
 	if errCreate != nil {
+		// Check if the error was that the name is already taken
+		if errdefs.IsConflict(errCreate) {
+			writer.WriteHeader(http.StatusConflict)
+			return
+		}
+		if errdefs.IsInvalidParameter(errCreate) {
+			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
 		writer.WriteHeader(http.StatusInternalServerError)
 		log.Println("[handlers.NewContainer] Error while creating the container: ", errCreate)
 		return

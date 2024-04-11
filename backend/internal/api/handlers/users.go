@@ -93,6 +93,36 @@ func CreateAccount(writer http.ResponseWriter, request *http.Request) {
 	writer.WriteHeader(httpRes)
 }
 
+func LogoutHandler(writer http.ResponseWriter, request *http.Request) {
+	models.CorsHeaders(writer, request)
+	if request.Method == http.MethodOptions {
+		writer.Header().Set("Access-Control-Allow-Methods", "POST")
+		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if request.Method != http.MethodPost {
+		writer.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	cookie, err := request.Cookie("session")
+	if err != nil {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	if models.DeleteSession(cookie.Value) != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	cookie.Expires = models.ExpireCookie()
+	http.SetCookie(writer, cookie)
+	writer.WriteHeader(http.StatusOK)
+	return
+}
+
 func AuthUser(writer http.ResponseWriter, request *http.Request) {
 	models.CorsHeaders(writer, request)
 	if request.Method == http.MethodOptions {
