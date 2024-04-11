@@ -102,7 +102,7 @@ func NewContainer(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	webContainer, errWc := models.NewWebContainer(container)
+	webContainer, errWc := models.NewWebContainer(container, nil)
 	if errWc != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		log.Println("[handlers.NewContainer] Error while creating the WebContainer: ", errWc)
@@ -214,6 +214,56 @@ func ListContainers(writer http.ResponseWriter, request *http.Request) {
 	}
 	writer.Header().Add("Content-Type", "application/json")
 	writer.Write(jsonTerminals)
+	writer.WriteHeader(http.StatusOK)
+	return
+}
+
+func InfoContainer(writer http.ResponseWriter, request *http.Request) {
+	models.CorsHeaders(writer, request)
+	if request.Method == http.MethodOptions {
+		writer.Header().Set("Access-Control-Allow-Methods", "POST")
+		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
+	switch request.Method {
+	case http.MethodGet:
+		break
+	default:
+		writer.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	email, errAuth := models.Middleware(request)
+	if errAuth != nil {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Get query parameters id
+	id := request.URL.Query().Get("id")
+	if id == "" {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Get container info
+	containerInfo, errGetContainerInfo := models.GetContainerInfo(id, email)
+	log.Println("[handlers.InfoContainer] Container info: ", containerInfo)
+	if errGetContainerInfo != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		log.Println("[handlers.InfoContainer] Error while getting container info: ", errGetContainerInfo)
+		return
+	}
+	// Convert to json
+	jsonTerminal, errJson := json.Marshal(containerInfo)
+	if errJson != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		log.Println("[handlers.InfoContainer] Error while marshalling the terminal: ", errJson)
+		return
+	}
+
+	writer.Header().Add("Content-Type", "application/json")
+	writer.Write(jsonTerminal)
 	writer.WriteHeader(http.StatusOK)
 	return
 }

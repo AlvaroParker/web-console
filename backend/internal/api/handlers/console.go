@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -46,21 +47,24 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if !models.ValidateContainer(email, hash) {
+	container := models.ValidateContainer(email, hash)
+	if container == nil {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	// Create a new WebContainer
-	webContainer, errorNewWC := models.DefaultWebContainer(&hash)
+	webContainer, errorNewWC := models.NewWebContainer(*container, &hash)
 	// Check if there was an error while creating the new WebContainer
 	if errorNewWC != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(os.Stderr, "Error while creating the WebContainer: ", errorNewWC)
+		log.Println("[handlers.ConsoleHandler] Error while creating the WebContainer: ", errorNewWC)
+		return
 	}
 	errorCreate := webContainer.Start()
 	if errorCreate != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(os.Stderr, "Error while creating the container: ", errorCreate)
+		log.Println("[handlers.ConsoleHandler] Error while starting the container: ", errorCreate)
+		return
 	}
 
 	// Upgrade the connection to a web socket

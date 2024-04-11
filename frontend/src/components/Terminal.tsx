@@ -1,16 +1,28 @@
 import { ITerminalOptions, ITheme, Terminal } from '@xterm/xterm'
 import './Terminal.css'
 import { FitAddon } from '@xterm/addon-fit'
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { checkAuth } from './util'
+import { capitalize, checkAuth } from './util'
+import { ContainerRes, GetContainerInfo, InfoContainerRes } from '../services/container'
 
 export function TerminalComponent({ wsURL }: { wsURL: string }) {
     const params = useParams()
-    console.log(params.containerId)
     const [endTerminal, _] = useState(false)
     const initialized = useRef(false)
     const navigate = useNavigate()
+    const [terminalInfo, setTerminalInfo] = React.useState<ContainerRes|null>(null)
+
+    useEffect(() => {
+        if (params.containerId !== undefined) {
+            GetContainerInfo(params.containerId).then(([response,container]) => {
+                if (response === InfoContainerRes.OK) {
+                    setTerminalInfo(container)
+                }
+            })
+        }
+    }, [])
+
 
     checkAuth(navigate)
     useEffect(() => {
@@ -19,7 +31,6 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
         if (!initialized.current) {
             initialized.current = true
 
-        console.log("Terminal component mounted")
 
         const theme: ITheme = {
             background: '#111827'
@@ -38,7 +49,6 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
         const ws = new WebSocket(`ws://${wsURL}/console/ws?hash=${params.containerId}&width=${cols}&height=${rows}`)
 
         ws.addEventListener('open', () => {
-            console.log("Web-console socket opened")
             ws.send('\n')
         })
 
@@ -61,18 +71,18 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
         term.onData((data, _) => {
             ws.send(data)
         })
-        console.log(rows, cols)
         }
     }, [])
 
     return (
         <>
             {
+                !endTerminal && terminalInfo !== null &&
+                <div className="text-3xl font-bold mb-5 mt-5">{terminalInfo.name} ({ capitalize(terminalInfo.image) + ":" + terminalInfo.tag})</div>
+            }
+            {
                 !endTerminal &&
-                <>
-                    <div className="text-3xl font-bold mb-5 mt-5">Ubuntu 22.04</div>
                     <div id="terminal" className="h-[75%]"></div>
-                </>
             }
             {
                 endTerminal &&

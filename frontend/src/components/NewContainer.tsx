@@ -1,5 +1,5 @@
 import React, { useEffect } from "react"
-import { Container, CreateContainer, NewContainerRes } from "../services/container"
+import { Container, ContainerRes, CreateContainer, NewContainerRes } from "../services/container"
 import { useNavigate } from "react-router-dom"
 
 export function NewContainer() {
@@ -26,6 +26,7 @@ export function NewContainer() {
     }, [])
 
     const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
         const image_raw = image.split(":")[0]
         const tag_raw = image.split(":")[1]
         if (!image_raw || !tag_raw || !containerName || !command) {

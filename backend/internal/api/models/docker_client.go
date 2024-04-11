@@ -53,7 +53,7 @@ func DefaultWebContainer(hash *string) (*WebContainer, error) {
 	}, nil
 }
 
-func NewWebContainer(containerConf Container) (*WebContainer, error) {
+func NewWebContainer(containerConf Container, id *string) (*WebContainer, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func NewWebContainer(containerConf Container) (*WebContainer, error) {
 		Name:          containerConf.Name,
 		context:       context.Background(),
 		client:        cli,
-		id:            nil,
+		id:            id,
 		networkEnable: containerConf.NetworkEnabled,
 	}, nil
 }
@@ -86,17 +86,16 @@ func (wc *WebContainer) Start() error {
 			Cmd: []string{wc.Command},
 		})
 		if errExecCreate != nil {
-			wc.client.ContainerRemove(wc.context, *wc.id, container.RemoveOptions{})
 			return errExecCreate
 		}
 
 		errExecStart := wc.client.ContainerExecStart(wc.context, id_response.ID, types.ExecStartCheck{})
 		if errExecStart != nil {
-			wc.client.ContainerRemove(wc.context, *wc.id, container.RemoveOptions{})
 			return errExecStart
 		}
 		return nil
 	}
+	log.Println("[WebContainer.Start] Container doesn't exists")
 	return err
 }
 

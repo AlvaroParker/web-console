@@ -16,7 +16,10 @@ CREATE TABLE IF NOT EXISTS terminals(
   FOREIGN KEY (email) REFERENCES users(email),
   image VARCHAR(64) NOT NULL,
   tag VARCHAR(64) NOT NULL,
-  name VARCHAR(64) NOT NULL
+  name VARCHAR(64) NOT NULL,
+  auto_remove BOOLEAN NOT NULL,
+  network_enabled BOOLEAN NOT NULL,
+  command VARCHAR(64) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS sessions(

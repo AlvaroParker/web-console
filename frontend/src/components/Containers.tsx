@@ -1,11 +1,7 @@
 import React, { useEffect } from "react"
 import { ContainerRes, ListContainers, ListContainersRes } from "../services/container"
 import { useNavigate } from "react-router-dom"
-
-function capitalize(word: string): string {
-    return word.charAt(0).toUpperCase() + word.slice(1);
-}
-
+import { capitalize } from "./util"
 
 export function ContainersComponent() {
     const [containers, setContainers] = React.useState<ContainerRes[] | null>(null)

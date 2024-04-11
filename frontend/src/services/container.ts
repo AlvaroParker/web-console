@@ -44,6 +44,14 @@ export enum ListContainersRes {
     UNKNOWN = 0
 }
 
+export enum InfoContainerRes {
+    OK = 200,
+    NO_CONTENT = 204,
+    UNAUTHORIZED = 401,
+    INTERNAL_SERVER_ERROR = 500,
+    UNKNOWN = 0
+}
+
 
 const CreateContainer = async (container: Container): Promise<NewContainerRes> => {
     try {
@@ -135,8 +143,31 @@ const DeleteContainer = async(containerId: string): Promise<DeleteContainerRes> 
     return DeleteContainerRes.UNKNOWN
 }
 
+const GetContainerInfo = async(containerId: string): Promise<[InfoContainerRes, ContainerRes | null]> => {
+    try {
+        const response = await axios.get(`${API_URL}/container/info?id=${containerId}`)
+        switch (response.status) {
+            case 200:
+                return [InfoContainerRes.OK, response.data]
+            case 204:
+                return [InfoContainerRes.NO_CONTENT, null]
+        }
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            switch (error.response?.status) {
+                case 401:
+                    return [InfoContainerRes.UNAUTHORIZED, null]
+                case 500:
+                    return [InfoContainerRes.INTERNAL_SERVER_ERROR, null]
+            }
+        }
+    }
+    return [InfoContainerRes.UNKNOWN, null]
+}
+
 export {
     CreateContainer,
     ListContainers,
     DeleteContainer,
+    GetContainerInfo
 }
