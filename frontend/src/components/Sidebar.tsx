@@ -1,12 +1,36 @@
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { LogOut, LogoutRes } from "../services/users";
 
 export function Sidebar() {
     const currentPath = window.location.pathname
     const selectedStyle = " text-gray-200 bg-gray-700 "
     const notSelectedStyle = " hover:bg-gray-700 hover:text-gray-300 "
-    
+    const navigate = useNavigate()
+     
     const returnStyle = (path: string) => {
         return currentPath == path ?selectedStyle:notSelectedStyle
+    }
+
+    const logout = async () => {
+        const res = await LogOut()
+        switch (res) {
+            case LogoutRes.OK:
+                navigate("/login")
+                // TODO
+                break
+            case LogoutRes.INTERNAL_SERVER_ERROR:
+                navigate("/login")
+                // TODO
+                break
+            case LogoutRes.UNAUTHORIZED:
+                // TODO
+                break
+            case LogoutRes.UNKNOWN:
+                navigate("/login")
+                // TODO
+                break
+        }
     }
 
     return (
@@ -41,11 +65,12 @@ export function Sidebar() {
                         </svg>
                     </a>
                 </div>
-                <a className="flex items-center justify-center w-16 h-16 mt-auto bg-gray-900 hover:bg-gray-700 hover:text-gray-300" href="#">
+                <p className="flex items-center justify-center w-16 h-16 mt-auto bg-gray-900 hover:bg-gray-700 hover:text-gray-300" onClick={() => logout()}>
                     <svg className="w-6 h-6 stroke-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5,3H11A3,3 0 0,1 14,6V10H13V6A2,2 0 0,0 11,4H5A2,2 0 0,0 3,6V19A2,2 0 0,0 5,21H11A2,2 0 0,0 13,19V15H14V19A3,3 0 0,1 11,22H5A3,3 0 0,1 2,19V6A3,3 0 0,1 5,3M8,12H19.25L16,8.75L16.66,8L21.16,12.5L16.66,17L16,16.25L19.25,13H8V12Z"/>
                     </svg>
-                </a>
+                </p>
+
             </div>
         </>
     )

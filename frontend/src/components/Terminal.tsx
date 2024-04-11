@@ -14,6 +14,8 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
 
     checkAuth(navigate)
     useEffect(() => {
+
+        document.title = "Web Terminal | Console"
         if (!initialized.current) {
             initialized.current = true
 

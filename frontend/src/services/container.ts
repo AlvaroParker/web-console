@@ -5,13 +5,18 @@ axios.defaults.withCredentials = true
 
 export interface Container {
     image: string;
-    tag: string
+    tag: string;
+    command: string;
+    name: string;
+    auto_remove: boolean;
+    network_enabled: boolean;
 }
 
 export interface ContainerRes {
     containerid: string;
     image: string;
     tag: string;
+    name: string;
 }
 
 export enum DeleteContainerRes {
@@ -40,7 +45,7 @@ export enum ListContainersRes {
 }
 
 
-const NewContainer = async (container: Container): Promise<NewContainerRes> => {
+const CreateContainer = async (container: Container): Promise<NewContainerRes> => {
     try {
         const response = await axios.post(`${API_URL}/container`, container)
         switch (response.status) {
@@ -131,7 +136,7 @@ const DeleteContainer = async(containerId: string): Promise<DeleteContainerRes> 
 }
 
 export {
-    NewContainer,
+    CreateContainer,
     ListContainers,
     DeleteContainer,
 }

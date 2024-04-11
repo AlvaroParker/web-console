@@ -52,8 +52,45 @@ const AuthCheck = async (): Promise<Boolean> => {
 
 }
 
+export enum LogoutRes {
+    OK = 200,
+    INTERNAL_SERVER_ERROR = 500,
+    UNAUTHORIZED = 401,
+    UNKNOWN = 0
+}
+
+const LogOut = async (): Promise<LogoutRes> => {
+    try {
+        const response = await axios.post(`${API_URL}/logout`)
+        switch (response.status) {
+            case 200:
+                return LogoutRes.OK
+            case 500:
+                return LogoutRes.INTERNAL_SERVER_ERROR
+            case 401:
+                return LogoutRes.UNAUTHORIZED
+            default:
+                return LogoutRes.UNKNOWN
+        }
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            console.log(error.message)
+            switch (error.response?.status) {
+                case 500:
+                    return LogoutRes.INTERNAL_SERVER_ERROR
+                case 401:
+                    return LogoutRes.UNAUTHORIZED
+                default:
+                    return LogoutRes.UNKNOWN
+            }
+        }
+    }
+    return LogoutRes.UNKNOWN
+}
+
 export {
     Login,
     Signin,
-    AuthCheck
+    AuthCheck,
+    LogOut
 }

@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect } from "react"
 import { Login } from "../services/users"
 import { useNavigate } from "react-router-dom"
 
@@ -32,6 +32,10 @@ export function LoginComponent() {
             setShowErr(true)
         }
     }
+
+    useEffect(() => {
+        document.title = "Web Terminal | Login"
+    }, [])
 
     return (
         <>

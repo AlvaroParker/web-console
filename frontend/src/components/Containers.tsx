@@ -12,6 +12,7 @@ export function ContainersComponent() {
     const navigate = useNavigate()
 
     useEffect(() => {
+        document.title = "Web Terminal | Containers"
         ListContainers().then((res) => {
             const [containers, response] = res
             switch (response) {
@@ -54,7 +55,8 @@ export function ContainersComponent() {
                                         <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 19H21M3 5L11 12L3 19"></path>
                                     </svg>
                                     <div className="space-y-2">
-                                        <h3 className="text-gray-400 text-2xl">{capitalize(item.image)}:{item.tag}</h3>
+                                        <h3 className="text-gray-400 text-2xl">{item.name}</h3>
+                                        <h3 className="text-gray-400 text-xl">{capitalize(item.image)}:{item.tag}</h3>
                                         <button className="block text-green-400 group-hover:text-green-800 transition duration-200" onClick={() => goToMachine(item.containerid)}>Access Machine →</button>
                                     </div>
                                 </div>
