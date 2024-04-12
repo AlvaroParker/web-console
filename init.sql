@@ -28,3 +28,14 @@ CREATE TABLE IF NOT EXISTS sessions(
   email VARCHAR(64) NOT NULL,
   FOREIGN KEY (email) REFERENCES users(email)
 );
+
+CREATE TABLE IF NOT EXISTS images(
+  id SERIAL PRIMARY KEY,
+  image_tag VARCHAR(64) UNIQUE NOT NULL,
+  commands VARCHAR(32)[] NOT NULL
+);
+
+INSERT INTO images(image_tag, commands) VALUES ('ubuntu:22.04', '{"/bin/bash", "/bin/sh"}');
+INSERT INTO images(image_tag, commands) VALUES ('python:3.11', '{"/usr/bin/python3", "/bin/bash", "/usr/bin/sh"}');
+INSERT INTO images(image_tag, commands) VALUES ('alpine:3.14', '{"/bin/sh"}');
+INSERT INTO images(image_tag, commands) VALUES ('debian:stable', '{"/bin/bash","/bin/sh"}');

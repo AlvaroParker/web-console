@@ -40,6 +40,10 @@ func CreateServer() *http.Server {
 	http.HandleFunc("/console/ws", handlers.ConsoleHandler)
 	http.HandleFunc("/container", handlers.ContainerHandler)
 	http.HandleFunc("/container/", handlers.ContainerHandler)
+
 	http.HandleFunc("/container/info", handlers.InfoContainer)
+	http.HandleFunc("/containers/fullstop", handlers.HandleFullStop)
+
+	http.HandleFunc("/images", handlers.GetImages)
 	return s
 }

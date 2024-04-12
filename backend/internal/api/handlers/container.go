@@ -10,27 +10,12 @@ import (
 	"github.com/docker/docker/errdefs"
 )
 
-var allowedContainers = []models.Container{
-	{
-		Image: "ubuntu",
-		Tag:   "22.04",
-	},
-	{
-		Image: "debian",
-		Tag:   "stable",
-	},
-	{
-		Image: "python",
-		Tag:   "3.11",
-	},
-}
-
 const LIMIT_CONTAINERS = 8
 
 func ContainerHandler(writer http.ResponseWriter, request *http.Request) {
 	models.CorsHeaders(writer, request)
 	if request.Method == http.MethodOptions {
-		writer.Header().Set("Access-Control-Allow-Methods", "POST")
+		writer.Header().Set("Access-Control-Allow-Methods", "POST, DELETE, GET")
 		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		writer.WriteHeader(http.StatusOK)
 		return
@@ -143,6 +128,8 @@ func NewContainer(writer http.ResponseWriter, request *http.Request) {
 // - 500: Internal Server Error
 func DeleteContainer(writer http.ResponseWriter, request *http.Request) {
 	// Check if the method is DELETE
+	models.CorsHeaders(writer, request)
+
 	if request.Method != http.MethodDelete {
 		writer.Header().Add("Allow", http.MethodDelete)
 		writer.WriteHeader(http.StatusMethodNotAllowed)
@@ -268,12 +255,82 @@ func InfoContainer(writer http.ResponseWriter, request *http.Request) {
 	return
 }
 
+func GetImages(writer http.ResponseWriter, request *http.Request) {
+	models.CorsHeaders(writer, request)
+	if request.Method == http.MethodOptions {
+		writer.Header().Set("Access-Control-Allow-Methods", "GET")
+		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
+	switch request.Method {
+	case http.MethodGet:
+		break
+	default:
+		writer.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	imagesDB, err := models.GetValidImages()
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		log.Println("[handlers.GetImages] Error while getting images from the database: ", err)
+		return
+	}
+	// Convert to json
+	jsonImages, errJson := json.Marshal(imagesDB)
+	if errJson != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		log.Println("[handlers.GetImages] Error while marshalling the images: ", errJson)
+		return
+	}
+	writer.Header().Add("Content-Type", "application/json")
+	writer.Write(jsonImages)
+	writer.WriteHeader(http.StatusOK)
+	return
+}
+
+func HandleFullStop(writer http.ResponseWriter, request *http.Request) {
+	models.CorsHeaders(writer, request)
+	if request.Method == http.MethodOptions {
+		writer.Header().Set("Access-Control-Allow-Methods", "POST")
+		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
+	switch request.Method {
+	case http.MethodPost:
+		break
+	default:
+		writer.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	email, errAuth := models.Middleware(request)
+	if errAuth != nil {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	err := models.FullStop(email)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		log.Println("[handlers.HandleFullStop] Error while stopping all containers: ", err)
+		return
+	}
+	writer.WriteHeader(http.StatusOK)
+}
+
 // Check if the image provided is valid to create a new container
 func isAllowed(container models.Container) bool {
+	validImages, errDB := models.GetValidImages()
+	if errDB != nil {
+		log.Println("[handlers.isAllowed] Error while getting valid images: ", errDB)
+		return false
+	}
+
 	log.Println("[handlers.isAllowed] Checking if container is allowed: ", container)
 	fullImage := container.Image + ":" + container.Tag
-	for _, allowedContainer := range allowedContainers {
-		if allowedContainer.Image+":"+allowedContainer.Tag == fullImage {
+
+	for _, allowedContainer := range validImages {
+		if allowedContainer.ImageTag == fullImage {
 			return true
 		}
 	}

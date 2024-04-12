@@ -40,9 +40,9 @@ export function LoginComponent() {
     return (
         <>
             <div className="mx-auto max-w-screen-xl px-4 py-16 sm:px-6 lg:px-8 flex items-center justify-center">
-                <div className="mx-auto max-w-lg bg-white rounded-xl">
+                <div className="mx-auto max-w-lg bg-gray-900 rounded-xl">
                     <form action="#" className="mb-0 mt-6 space-y-4 rounded-lg p-4 shadow-lg sm:p-6 lg:p-8" onSubmit={handleSubmit}>
-                        <p className="text-center text-lg font-medium text-black">Sign in to your account</p>
+                        <p className="text-center text-lg font-medium text-gray-200">Sign in to your account</p>
 
                         <div>
                             <label htmlFor="email" className="sr-only">Email</label>
@@ -123,7 +123,7 @@ export function LoginComponent() {
                         {
                             showErr && <p className="text-center text-red-500">Wrong email or password</p>
                         }
-                        <p className="text-center text-sm text-gray-500">
+                        <p className="text-center text-sm text-gray-400">
                             No account? That's sad :(
                         </p>
                     </form>

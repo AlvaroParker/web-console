@@ -7,6 +7,7 @@ import (
 	database "github.com/AlvaroParker/web-console/internal/api"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/lib/pq"
 )
 
 type Terminal struct {
@@ -36,6 +37,12 @@ type Container struct {
 	Name           *string `json:"name"`
 	NetworkEnabled bool    `json:"network_enabled"`
 	Command        *string `json:"command"`
+}
+
+type ImagesDB struct {
+	Id       int      `json:"id"`
+	ImageTag string   `json:"image_tag"`
+	Commands []string `json:"commands"`
 }
 
 func ValidateContainer(email string, hash string) *Container {
@@ -129,4 +136,44 @@ func GetContainerInfo(id string, email string) (*TerminalRes, error) {
 	}
 
 	return &terminal, nil
+}
+
+func GetValidImages() ([]ImagesDB, error) {
+	rowsDB, errorDb := database.DB.Query("SELECT id, image_tag, commands FROM images")
+	if errorDb != nil {
+		return nil, errorDb
+	}
+	// Convert the rows to a list of `Terminal`
+	var images []ImagesDB
+	for rowsDB.Next() {
+		var image ImagesDB
+		if errScan := rowsDB.Scan(&image.Id, &image.ImageTag, (*pq.StringArray)(&image.Commands)); errScan != nil {
+			return nil, errScan
+		}
+
+		images = append(images, image)
+	}
+
+	return images, nil
+}
+
+func FullStop(email string) error {
+	rowsDB, errorDb := database.DB.Query("SELECT containerid FROM terminals WHERE email = $1", email)
+	if errorDb != nil {
+		return errorDb
+	}
+
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return err
+	}
+
+	for rowsDB.Next() {
+		var containerID string
+		if errScan := rowsDB.Scan(&containerID); errScan != nil {
+			return errScan
+		}
+		go cli.ContainerStop(context.Background(), containerID, container.StopOptions{})
+	}
+	return nil
 }

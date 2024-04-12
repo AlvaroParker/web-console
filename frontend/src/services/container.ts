@@ -3,6 +3,11 @@ import { API_URL } from "./consts";
 
 axios.defaults.withCredentials = true
 
+export interface ContainerImageOpt {
+    image_tag: string,
+    commands: string[]
+}
+
 export interface Container {
     image: string;
     tag: string;
@@ -165,9 +170,58 @@ const GetContainerInfo = async(containerId: string): Promise<[InfoContainerRes, 
     return [InfoContainerRes.UNKNOWN, null]
 }
 
+export enum ContainerImageOptRes {
+    OK = 200,
+    NO_CONTENT = 204,
+    UNAUTHORIZED = 401,
+    INTERNAL_SERVER_ERROR = 500,
+    UNKNOWN = 0
+}
+
+const GetValidImages = async (): Promise<[ContainerImageOpt[] | null, ContainerImageOptRes]> => {
+    try {
+        const response = await axios.get(`${API_URL}/images`)
+        switch (response.status) {
+            case 200:
+                return [response.data, ContainerImageOptRes.OK]
+            case 204:
+                return [null, ContainerImageOptRes.NO_CONTENT]
+            case 401:
+                return [null, ContainerImageOptRes.UNAUTHORIZED]
+            case 500:
+                return [null, ContainerImageOptRes.INTERNAL_SERVER_ERROR]
+        }
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            switch (error.response?.status) {
+                case 401:
+                    return [null, ContainerImageOptRes.UNAUTHORIZED]
+                case 500:
+                    return [null, ContainerImageOptRes.INTERNAL_SERVER_ERROR]
+            }
+        }
+    }
+    return [null, ContainerImageOptRes.UNKNOWN]
+}
+
+const FullStop = async (): Promise<boolean> => {
+    try {
+        const response = await axios.post(`${API_URL}/containers/fullstop`)
+        return response.status === 200
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            console.log(error.message)
+        }
+    }
+    return false
+
+}
+
 export {
     CreateContainer,
     ListContainers,
     DeleteContainer,
-    GetContainerInfo
+    GetContainerInfo,
+    GetValidImages,
+    FullStop
 }
