@@ -12,6 +12,7 @@ import { Sidebar } from './components/Sidebar.tsx'
 import { API_ADDRESS } from './services/consts.ts'
 import { NotFound } from './components/404.tsx'
 import { NewContainer } from './components/NewContainer.tsx'
+import { CodeEditor } from './components/CodeEditor.tsx'
 
 const router = createBrowserRouter([
   {
@@ -46,6 +47,17 @@ const router = createBrowserRouter([
         <div className="flex-grow mx-5">
           <NewContainer/>
         </div>
+    </>
+  },
+  {
+    path: "/code",
+    element:
+    <>
+        <Sidebar />
+        <div className="flex-grow mx-5">
+          <CodeEditor/>
+        </div>
+    
     </>
   },
   {

@@ -3,7 +3,7 @@ import './Terminal.css'
 import { FitAddon } from '@xterm/addon-fit'
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { capitalize, checkAuth } from './util'
+import { LoadTerminal, capitalize, checkAuth } from './util'
 import { ContainerRes, GetContainerInfo, InfoContainerRes } from '../services/container'
 
 export function TerminalComponent({ wsURL }: { wsURL: string }) {
@@ -11,11 +11,11 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
     const [endTerminal, _] = useState(false)
     const initialized = useRef(false)
     const navigate = useNavigate()
-    const [terminalInfo, setTerminalInfo] = React.useState<ContainerRes|null>(null)
+    const [terminalInfo, setTerminalInfo] = React.useState<ContainerRes | null>(null)
 
     useEffect(() => {
         if (params.containerId !== undefined) {
-            GetContainerInfo(params.containerId).then(([response,container]) => {
+            GetContainerInfo(params.containerId).then(([response, container]) => {
                 if (response === InfoContainerRes.OK) {
                     setTerminalInfo(container)
                 }
@@ -32,45 +32,31 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
             initialized.current = true
 
 
-        const theme: ITheme = {
-            background: '#111827'
-        }
-        const terminalOptons: ITerminalOptions = {
-            theme
-        }
-        const term = new Terminal(terminalOptons)
-        const fitAddon = new FitAddon()
+            const term = LoadTerminal("terminal")
+            const { rows, cols } = term
 
-        term.loadAddon(fitAddon)
-        term.open(document.getElementById("terminal") as HTMLElement)
+            const ws = new WebSocket(`ws://${wsURL}/console/ws?hash=${params.containerId}&width=${cols}&height=${rows}`)
 
-        fitAddon.fit()
-        const { rows, cols } = term
-        const ws = new WebSocket(`ws://${wsURL}/console/ws?hash=${params.containerId}&width=${cols}&height=${rows}`)
+            ws.addEventListener('open', () => {
+                ws.send('\n')
+            })
+            ws.addEventListener('message', event => {
+                let data = window.atob(event.data)
+                term.write(data)
+            })
+            ws.addEventListener('error', (error) => {
+                console.error("WebSocket Error: ", error);
+            });
+            ws.addEventListener('close', (event) => {
+                // setEndTerminal(true)
+                // term.dispose()
+                console.log("WebSocket closed: ", event);
+                // try reconnect
+            });
+            term.onData((data, _) => {
+                ws.send(data)
+            })
 
-        ws.addEventListener('open', () => {
-            ws.send('\n')
-        })
-
-        ws.addEventListener('message', event => {
-            let data = window.atob(event.data)
-            term.write(data)
-        })
-
-        ws.addEventListener('error', (error) => {
-            console.error("WebSocket Error: ", error);
-        });
-
-        ws.addEventListener('close', (event) => {
-            // setEndTerminal(true)
-            // term.dispose()
-            console.log("WebSocket closed: ", event);
-            // try reconnect
-        });
-
-        term.onData((data, _) => {
-            ws.send(data)
-        })
         }
     }, [])
 
@@ -78,11 +64,11 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
         <>
             {
                 !endTerminal && terminalInfo !== null &&
-                <div className="text-3xl font-bold mb-5 mt-5">{terminalInfo.name} ({ capitalize(terminalInfo.image) + ":" + terminalInfo.tag})</div>
+                <div className="text-3xl font-bold mb-5 mt-5">{terminalInfo.name} ({capitalize(terminalInfo.image) + ":" + terminalInfo.tag})</div>
             }
             {
                 !endTerminal &&
-                    <div id="terminal" className="h-[75%]"></div>
+                <div id="terminal" className="h-[75%]"></div>
             }
             {
                 endTerminal &&
