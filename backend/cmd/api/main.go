@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -11,6 +12,13 @@ import (
 
 // github.com/AlvaroParker/web-console
 func main() {
+	errMkdir := os.Mkdir("tmp", 0777)
+	if errMkdir != nil {
+		if os.IsExist(errMkdir) {
+			log.Println("Directory already exists.")
+		}
+	}
+
 	fmt.Println("Starting the server...")
 	// We create the http server
 	http_server := server.CreateServer()

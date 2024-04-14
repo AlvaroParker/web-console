@@ -20,7 +20,7 @@ var upgrader = websocket.Upgrader{}
 func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 	models.CorsHeaders(writer, request)
 	if request.Method == http.MethodOptions {
-		writer.Header().Set("Access-Control-Allow-Methods", "POST")
+		writer.Header().Set("Access-Control-Allow-Methods", "GET")
 		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		writer.WriteHeader(http.StatusOK)
 		return
