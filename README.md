@@ -10,3 +10,9 @@ This project allows you to interact with a Linux machine running on a remote Doc
 
 ![Screenshot of apt on browser](./showcase/AptBrowser.png)
 
+
+## Todos:
+
+- Handling code editing
+- Generate a container to execute remote code for each supported language
+- Response back to the client with the output of the code execution
