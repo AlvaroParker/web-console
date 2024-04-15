@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"net"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -59,7 +60,7 @@ func NewWebContainer(containerConf Container, id *string) (*WebContainer, error)
 		return nil, err
 	}
 	// Check if containerConf has empty values or non set
-	if containerConf.Image == "" || containerConf.Tag == "" || containerConf.Command == nil || containerConf.Name == nil {
+	if containerConf.Image == "" || containerConf.Tag == "" || containerConf.Command == nil {
 		return nil, errors.New("Empty values in containerConf")
 	}
 
@@ -76,22 +77,24 @@ func NewWebContainer(containerConf Container, id *string) (*WebContainer, error)
 	}, nil
 }
 
-func (wc *WebContainer) Start() error {
+func (wc *WebContainer) Start(doexec bool) error {
 	_, err := wc.client.ContainerInspect(wc.context, *wc.id)
 	// Container exists
 	if err == nil {
 		wc.client.ContainerStart(wc.context, *wc.id, container.StartOptions{})
 
-		id_response, errExecCreate := wc.client.ContainerExecCreate(wc.context, *wc.id, types.ExecConfig{
-			Cmd: []string{wc.Command},
-		})
-		if errExecCreate != nil {
-			return errExecCreate
-		}
+		if doexec {
+			id_response, errExecCreate := wc.client.ContainerExecCreate(wc.context, *wc.id, types.ExecConfig{
+				Cmd: []string{wc.Command},
+			})
+			if errExecCreate != nil {
+				return errExecCreate
+			}
 
-		errExecStart := wc.client.ContainerExecStart(wc.context, id_response.ID, types.ExecStartCheck{})
-		if errExecStart != nil {
-			return errExecStart
+			errExecStart := wc.client.ContainerExecStart(wc.context, id_response.ID, types.ExecStartCheck{})
+			if errExecStart != nil {
+				return errExecStart
+			}
 		}
 		return nil
 	}
@@ -103,7 +106,7 @@ func (wc *WebContainer) Start() error {
 func (wc *WebContainer) Create() (*string, error) {
 	// Check if we have an ID and if the container exists
 	if wc.id != nil {
-		err := wc.Start()
+		err := wc.Start(true)
 		if err == nil {
 			return wc.id, nil
 		}
@@ -114,6 +117,17 @@ func (wc *WebContainer) Create() (*string, error) {
 		return nil, errors.New("client or context is nil")
 	}
 
+	// Split the command by space, first check if the command doesn't start with sh -c
+	var cmd []string
+	if strings.HasPrefix(wc.Command, "/bin/sh -c") {
+		// Split only in 3 parts
+		cmd = strings.SplitN(wc.Command, " ", 3)
+	} else {
+		cmd = strings.Split(wc.Command, " ")
+	}
+
+	log.Println("[WebContainer.Create] Command: ", cmd)
+
 	containerConfig := container.Config{
 		Image:           string(wc.Image),
 		AttachStdin:     wc.AttachIO,
@@ -122,7 +136,7 @@ func (wc *WebContainer) Create() (*string, error) {
 		OpenStdin:       wc.AttachIO,
 		Tty:             wc.AttachIO,
 		NetworkDisabled: !wc.networkEnable,
-		Cmd:             []string{wc.Command},
+		Cmd:             cmd,
 	}
 
 	hostConfig := container.HostConfig{

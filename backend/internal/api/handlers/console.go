@@ -60,7 +60,7 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 		log.Println("[handlers.ConsoleHandler] Error while creating the WebContainer: ", errorNewWC)
 		return
 	}
-	errorCreate := webContainer.Start()
+	errorCreate := webContainer.Start(true)
 	if errorCreate != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		log.Println("[handlers.ConsoleHandler] Error while starting the container: ", errorCreate)

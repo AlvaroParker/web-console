@@ -46,5 +46,6 @@ func CreateServer() *http.Server {
 	http.HandleFunc("/images", handlers.GetImages)
 
 	http.HandleFunc("/code", handlers.PostCodeHandler)
+
 	return s
 }

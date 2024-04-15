@@ -22,7 +22,7 @@ func PostCodeHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	user, errAuth := models.Middleware(request)
+	_, errAuth := models.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
@@ -42,12 +42,14 @@ func PostCodeHandler(writer http.ResponseWriter, request *http.Request) {
 
 	log.Println("{code: \"" + *codeReq.Code + "\", language: \"" + *codeReq.Language + "\"}")
 
-	path, errCreation := models.HandleFIleCreation(*codeReq.Code, user)
-	if errCreation != nil {
+	output, errExec := models.HandleExecution(&codeReq)
+	if errExec != nil {
+		log.Println("[handlers.PostCodeHandler] Error while executing the code: ", errExec)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	log.Println("File created at ", path)
-
+	log.Println("[handlers.PostCodeHandler] Output: ", string(output))
+	writer.Write(output)
 	writer.WriteHeader(http.StatusOK)
+	return
 }
