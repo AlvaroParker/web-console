@@ -1,11 +1,12 @@
 import React, { useEffect } from "react"
 import { Container, ContainerImageOpt, ContainerImageOptRes, CreateContainer, GetValidImages, NewContainerRes } from "../services/container"
 import { useNavigate } from "react-router-dom"
-import { capitalize } from "./util"
+import { capitalize, checkAuth } from "./util"
 
 
 export function NewContainer() {
     const navigate = useNavigate()
+    checkAuth(navigate)
     const [images, setImages] = React.useState<ContainerImageOpt[]>(Array<ContainerImageOpt>())
 
     const [containerName, setContainerName] = React.useState<string>("")
