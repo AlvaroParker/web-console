@@ -1,6 +1,4 @@
-import { ITerminalOptions, ITheme, Terminal } from '@xterm/xterm'
 import './Terminal.css'
-import { FitAddon } from '@xterm/addon-fit'
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { LoadTerminal, capitalize, checkAuth } from './util'
@@ -51,6 +49,7 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
                 // setEndTerminal(true)
                 // term.dispose()
                 console.log("WebSocket closed: ", event);
+                navigate('/')
                 // try reconnect
             });
             term.onData((data, _) => {

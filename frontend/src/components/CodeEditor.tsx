@@ -6,6 +6,7 @@ import { TopBar } from './TopBar';
 import { RunCode, RunCodeRes } from '../services/code';
 import { useNavigate } from 'react-router-dom';
 import { Terminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
 
 export function CodeEditor() {
     const didAuth = useRef(false)
@@ -17,6 +18,7 @@ export function CodeEditor() {
     const [content, setContent] = useState('' as string)
     const terminal: React.MutableRefObject<Terminal |null>= useRef(null)
 
+
     function handleEditorDidMount(editor: monaco.editor.IStandaloneCodeEditor, _: Monaco) {
         editorRef.current = editor;
     }
@@ -25,6 +27,7 @@ export function CodeEditor() {
         if (editorRef.current) {
             editorRef.current.layout({} as monaco.editor.IDimension);
         }
+        FitAddon.bind(terminal.current as Terminal)
     };
 
     useEffect(() => {
@@ -101,18 +104,18 @@ export function CodeEditor() {
         <TopBar setLanguage={setLang} setContent={setContent} handleDownload={handleDownload} handleRunCode={handleRunCode} clearScreen={clearScreen}/>
         <div className="flex flex-row h-screen"> {/* Changed flex-col to flex-row */}
             <Editor
-                className="flex-1 mb-5 mx-2"  // Adjust margins as needed
+                className="flex-1 mx-2"  // Adjust margins as needed
                 options={{ automaticLayout: true }}
                 defaultLanguage="rust"
                 language={lang}
-                height="100%"  // Set height to 100% to fill parent vertically
+                height="90%"  // Set height to 100% to fill parent vertically
                 defaultValue="// Add some code here!"
                 theme="vs-dark"
                 onMount={handleEditorDidMount}
                 onChange={(value, _) => setContent(value ?? '')}
                 value={content}
             />
-            <div className="flex-1 mb-5 mx-2 " id='terminal'>
+            <div className="flex-1 mx-2 h-[90%]" id='terminal'>
             </div>
         </div>
         </>

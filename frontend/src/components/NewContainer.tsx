@@ -1,12 +1,12 @@
-import React, { useEffect } from "react"
+import React, { useEffect, useRef } from "react"
 import { Container, ContainerImageOpt, ContainerImageOptRes, CreateContainer, GetValidImages, NewContainerRes } from "../services/container"
 import { useNavigate } from "react-router-dom"
 import { capitalize, checkAuth } from "./util"
 
 
 export function NewContainer() {
+    const didAuth = useRef(false)
     const navigate = useNavigate()
-    checkAuth(navigate)
     const [images, setImages] = React.useState<ContainerImageOpt[]>(Array<ContainerImageOpt>())
 
     const [containerName, setContainerName] = React.useState<string>("")
@@ -36,6 +36,10 @@ export function NewContainer() {
     }
 
     useEffect(() => {
+        if (!didAuth.current) {
+            didAuth.current = true
+            checkAuth(navigate)
+        }
         document.title = "Web Terminal | New Container"
         GetValidImages().then(([data, res]) => {
             switch (res) {

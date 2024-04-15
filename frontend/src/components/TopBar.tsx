@@ -179,7 +179,7 @@ export function TopBar(
 
                         </div>
                     </div>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0" onClick={() => props.handleRunCode()}>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 cursor-pointer" onClick={() => props.handleRunCode()}>
                         <p className="mr-2">Run code</p>
                         <button type="button" className="relative rounded-full bg-gray-800 p-1 text-green-400 hover:text-green-600 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true">

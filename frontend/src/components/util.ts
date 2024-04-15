@@ -22,10 +22,10 @@ export function decapitalize(word: string): string {
 
 export function LoadTerminal(id : string): Terminal {
     const theme: ITheme = {
-        background: '#111827'
+        background: '#111827',
     }
     const terminalOptons: ITerminalOptions = {
-        theme
+        theme,
     }
     const term = new Terminal(terminalOptons)
     const fitAddon = new FitAddon()
