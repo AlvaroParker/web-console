@@ -7,11 +7,13 @@ import (
 	"os"
 
 	"github.com/AlvaroParker/web-console/internal/api/server"
+	"github.com/charmbracelet/log"
 )
 
 // github.com/AlvaroParker/web-console
 func main() {
-	fmt.Println("Starting the server...")
+	log.SetLevel(log.DebugLevel)
+	log.Info("Starting the server...")
 	// We create the http server
 	http_server := server.CreateServer()
 

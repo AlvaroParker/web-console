@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/AlvaroParker/web-console/internal/api/models"
+	"github.com/charmbracelet/log"
 )
 
 func PostCodeHandler(writer http.ResponseWriter, request *http.Request) {
@@ -40,15 +40,15 @@ func PostCodeHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	log.Println("{code: \"" + *codeReq.Code + "\", language: \"" + *codeReq.Language + "\"}")
-
 	output, errExec := models.HandleExecution(&codeReq)
 	if errExec != nil {
-		log.Println("[handlers.PostCodeHandler] Error while executing the code: ", errExec)
+		log.Error("[handlers.PostCodeHandler] Error while executing the code: ", errExec)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	log.Println("[handlers.PostCodeHandler] Output: ", string(output))
+	if len(output) == 0 {
+		log.Warn("[handlers.PostCodeHandler] Empty output")
+	}
 	writer.Write(output)
 	writer.WriteHeader(http.StatusOK)
 	return

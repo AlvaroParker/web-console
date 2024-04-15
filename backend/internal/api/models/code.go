@@ -4,8 +4,8 @@ import (
 	"archive/tar"
 	"bytes"
 	"io"
-	"log"
 
+	"github.com/charmbracelet/log"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 )
@@ -15,25 +15,24 @@ type CodeReq struct {
 	Language *string `json:"language"`
 }
 
+/*
+Right now executions are not interactive, this can be changed by attach the stdio to the container the same
+way we do on console.go
+*/
 func HandleExecution(code *CodeReq) ([]byte, error) {
+	log.Info("[models.HandleExecution] Code: \"", *code.Code, "\" ,Language: \"", *code.Language, "\"")
 	switch *code.Language {
 	case "rust":
-		log.Println("[models.HandleExecution] Rust code detected")
 		return HandleGenericExecution(*code.Code, "/usr/local/cargo/bin/cargo run", "customrust", "latest", "/usr/src/app/devcontainer/src", "main.rs")
 	case "python":
-		log.Println("[models.HandleExecution] Python code detected")
 		return HandleGenericExecution(*code.Code, "python3 /app/main.py", "custompython", "latest", "/app", "main.py")
 	case "c":
-		log.Println("[models.HandleExecution] C code detected")
 		return HandleGenericExecution(*code.Code, "./run.sh", "customc", "latest", "/app", "main.c")
 	case "cpp":
-		log.Println("[models.HandleExecution] C++ code detected")
 		return HandleGenericExecution(*code.Code, "./runcpp.sh", "customcpp", "latest", "/app", "main.cpp") // ?? not working
 	case "typescript":
-		log.Println("[models.HandleExecution] TypeScript code detected")
 		return HandleGenericExecution(*code.Code, "ts-node /app/index.ts", "customts", "latest", "/app", "index.ts")
 	case "go":
-		log.Println("[models.HandleExecution] Go code detected")
 		return HandleGenericExecution(*code.Code, "go run /app/main.go", "customgo", "latest", "/app", "main.go")
 	default:
 		return nil, nil
@@ -60,24 +59,22 @@ func HandleGenericExecution(content string, command string, image string, tag st
 	}
 	wc, errWc := NewWebContainer(containerConfig, nil)
 	if errWc != nil {
-		log.Println("[models.HandleGenericExecution] Error while creating the WebContainer: ", errWc)
 		return nil, errWc
 	}
 	id, errCreate := wc.Create()
 	defer wc.client.ContainerRemove(wc.context, *id, container.RemoveOptions{Force: true})
 	if errCreate != nil {
-		log.Println("[models.HandleGenericExecution] Error while creating the container: ", errCreate)
 		return nil, errCreate
 	}
 
 	buf, errTar := createTar(content, name)
 	if errTar != nil {
-		log.Println("[models.HandleGenericExecution] Error while creating the tar: ", errTar)
 		return nil, errTar
 	}
 
 	bufLogs, errCpRun := copyAndRun(wc, filepath, buf, id)
 	if errCpRun != nil {
+		log.Error("[models.HandleGenericExecution] Error while copying and running: ", errCpRun)
 		return nil, errCpRun
 	}
 	return bufLogs, nil
@@ -104,13 +101,11 @@ func copyAndRun(wc *WebContainer, path string, buf *bytes.Buffer, id *string) ([
 		AllowOverwriteDirWithFile: false,
 	})
 	if copyErr != nil {
-		log.Println("[models.copyAndRun] Error while copying the file to the container: ", copyErr)
 		return nil, copyErr
 	}
 
 	errStart := wc.Start(false)
 	if errStart != nil {
-		log.Println("[models.copyAndRun] Error while starting the container: ", errStart)
 		return nil, errStart
 	}
 
@@ -121,14 +116,12 @@ func copyAndRun(wc *WebContainer, path string, buf *bytes.Buffer, id *string) ([
 		ShowStderr: true,
 	})
 	if errLogs != nil {
-		log.Println("[models.copyAndRun] Error while getting the logs: ", errLogs)
 		return nil, errLogs
 	}
 
 	// Read to buff
 	bufLogs, errRead := io.ReadAll(reader)
 	if errRead != nil {
-		log.Println("[models.copyAndRun] Error while reading the logs: ", errRead)
 		return nil, errRead
 	}
 	return bufLogs, nil

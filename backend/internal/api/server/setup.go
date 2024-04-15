@@ -1,13 +1,13 @@
 package server
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"time"
 
 	database "github.com/AlvaroParker/web-console/internal/api"
 	"github.com/AlvaroParker/web-console/internal/api/handlers"
+	"github.com/charmbracelet/log"
 	"github.com/joho/godotenv"
 
 	_ "github.com/lib/pq"
@@ -20,7 +20,7 @@ func CreateServer() *http.Server {
 	}
 
 	dbUrl := os.Getenv("DATABASE_URL")
-	log.Println("Connecting with url ", dbUrl)
+	log.Debug("Connecting with url ", dbUrl)
 	database.InitDB(dbUrl)
 
 	s := &http.Server{

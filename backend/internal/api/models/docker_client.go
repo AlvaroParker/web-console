@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"log"
 	"net"
 	"strings"
 
+	"github.com/charmbracelet/log"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -98,7 +98,7 @@ func (wc *WebContainer) Start(doexec bool) error {
 		}
 		return nil
 	}
-	log.Println("[WebContainer.Start] Container doesn't exists")
+	log.Info("[WebContainer.Start] Container doesn't exists")
 	return err
 }
 
@@ -126,7 +126,7 @@ func (wc *WebContainer) Create() (*string, error) {
 		cmd = strings.Split(wc.Command, " ")
 	}
 
-	log.Println("[WebContainer.Create] Command: ", cmd)
+	log.Info("[WebContainer.Create] Command: ", cmd)
 
 	containerConfig := container.Config{
 		Image:           string(wc.Image),
@@ -194,7 +194,7 @@ func (wc *WebContainer) AttachContainer(resize bool, wsConn *websocket.Conn, wid
 func (wc *WebContainer) Close() {
 	err := wc.client.ContainerStop(wc.context, *wc.id, container.StopOptions{})
 	if err != nil {
-		log.Println("[WebContainer.Close] Error while stopping the container: ", err)
+		log.Info("[WebContainer.Close] Error while stopping the container: ", err)
 	}
 }
 

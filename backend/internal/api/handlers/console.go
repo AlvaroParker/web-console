@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/AlvaroParker/web-console/internal/api/models"
+	"github.com/charmbracelet/log"
 	"github.com/gorilla/websocket"
 )
 
@@ -57,13 +57,13 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 	// Check if there was an error while creating the new WebContainer
 	if errorNewWC != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		log.Println("[handlers.ConsoleHandler] Error while creating the WebContainer: ", errorNewWC)
+		log.Error("[handlers.ConsoleHandler] Error while creating the WebContainer: ", errorNewWC)
 		return
 	}
 	errorCreate := webContainer.Start(true)
 	if errorCreate != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		log.Println("[handlers.ConsoleHandler] Error while starting the container: ", errorCreate)
+		log.Error("[handlers.ConsoleHandler] Error while starting the container: ", errorCreate)
 		return
 	}
 

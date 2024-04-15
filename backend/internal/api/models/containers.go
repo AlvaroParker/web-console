@@ -2,9 +2,9 @@ package models
 
 import (
 	"context"
-	"log"
 
 	database "github.com/AlvaroParker/web-console/internal/api"
+	"github.com/charmbracelet/log"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/lib/pq"
@@ -51,7 +51,7 @@ func ValidateContainer(email string, hash string) *Container {
 	queryErr := query.Scan(&container.Image, &container.Tag, &container.Name, &container.AutoRemove, &container.NetworkEnabled, &container.Command)
 
 	if queryErr != nil {
-		log.Println("[models.ValidateContainer] Error while querying the database: ", queryErr)
+		log.Info("[models.ValidateContainer] Error while querying the database: ", queryErr)
 		return nil
 	}
 	return &container
