@@ -1,4 +1,4 @@
-import axios from "axios"
+import axios, { isAxiosError } from "axios"
 import { API_URL } from "./consts"
 
 // axios allow CORS by default
@@ -88,9 +88,52 @@ const LogOut = async (): Promise<LogoutRes> => {
     return LogoutRes.UNKNOWN
 }
 
+export interface UserInfoPayload {
+    name: string,
+    lastname: string,
+    email: string,
+}
+
+export enum UserInfoRes {
+    OK = 200,
+    INTERNAL_SERVER_ERROR = 500,
+    UNAUTHORIZED = 401,
+    UNKNOWN = 0
+}
+
+const UserInfo = async (): Promise<[UserInfoPayload | null, UserInfoRes]> => {
+    try {
+        const response = await axios.get(`${API_URL}/user/info`)
+        switch (response.status) {
+            case 200:
+                return [response.data, UserInfoRes.OK]
+            case 500:
+                return [null, UserInfoRes.INTERNAL_SERVER_ERROR]
+            case 401:
+                return [null, UserInfoRes.UNAUTHORIZED]
+            default:
+                return [null, UserInfoRes.UNKNOWN]
+        }
+    } catch (error) {
+        if (isAxiosError(error)) {
+            console.log(error.message)
+            switch (error.response?.status) {
+                case 500:
+                    return [null, UserInfoRes.INTERNAL_SERVER_ERROR]
+                case 401:
+                    return [null, UserInfoRes.UNAUTHORIZED]
+                default:
+                    return [null, UserInfoRes.UNKNOWN]
+            }
+        }
+    }
+    return [null, UserInfoRes.UNKNOWN]
+}
+
 export {
     Login,
     Signin,
     AuthCheck,
-    LogOut
+    LogOut,
+    UserInfo
 }

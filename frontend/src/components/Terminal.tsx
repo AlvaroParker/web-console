@@ -30,30 +30,32 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
             initialized.current = true
 
 
-            const term = LoadTerminal("terminal")
-            const { rows, cols } = term
+            LoadTerminal("terminal").then(([term, fit]) => {
+                fit.fit()
+                const { rows, cols } = term
 
-            const ws = new WebSocket(`ws://${wsURL}/console/ws?hash=${params.containerId}&width=${cols}&height=${rows}`)
+                const ws = new WebSocket(`ws://${wsURL}/console/ws?hash=${params.containerId}&width=${cols}&height=${rows}`)
 
-            ws.addEventListener('open', () => {
-                ws.send('\n')
-            })
-            ws.addEventListener('message', event => {
-                let data = window.atob(event.data)
-                term.write(data)
-            })
-            ws.addEventListener('error', (error) => {
-                console.error("WebSocket Error: ", error);
-            });
-            ws.addEventListener('close', (event) => {
-                // setEndTerminal(true)
-                // term.dispose()
-                console.log("WebSocket closed: ", event);
-                navigate('/')
-                // try reconnect
-            });
-            term.onData((data, _) => {
-                ws.send(data)
+                ws.addEventListener('open', () => {
+                    ws.send('\n')
+                })
+                ws.addEventListener('message', event => {
+                    let data = window.atob(event.data)
+                    term.write(data)
+                })
+                ws.addEventListener('error', (error) => {
+                    console.error("WebSocket Error: ", error);
+                });
+                ws.addEventListener('close', (event) => {
+                    // setEndTerminal(true)
+                    // term.dispose()
+                    console.log("WebSocket closed: ", event);
+                    navigate('/')
+                    // try reconnect
+                });
+                term.onData((data, _) => {
+                    ws.send(data)
+                })
             })
 
         }

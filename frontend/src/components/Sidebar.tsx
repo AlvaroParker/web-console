@@ -1,37 +1,14 @@
-import { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { LogOut, LogoutRes } from "../services/users";
+import { Link } from "react-router-dom";
 
 export function Sidebar() {
     const currentPath = window.location.pathname
     const selectedStyle = " text-gray-200 bg-gray-700 "
     const notSelectedStyle = " hover:bg-gray-700 hover:text-gray-300 "
-    const navigate = useNavigate()
 
     const returnStyle = (path: string) => {
         return currentPath == path ? selectedStyle : notSelectedStyle
     }
 
-    const logout = async () => {
-        const res = await LogOut()
-        switch (res) {
-            case LogoutRes.OK:
-                navigate("/login")
-                // TODO
-                break
-            case LogoutRes.INTERNAL_SERVER_ERROR:
-                navigate("/login")
-                // TODO
-                break
-            case LogoutRes.UNAUTHORIZED:
-                // TODO
-                break
-            case LogoutRes.UNKNOWN:
-                navigate("/login")
-                // TODO
-                break
-        }
-    }
 
     return (
         <>
@@ -64,17 +41,12 @@ export function Sidebar() {
                     </Link>
                 </div>
                 <div className="flex flex-col items-center mt-2 border-t border-gray-700">
-                    <a className="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-gray-700 hover:text-gray-300" href="#">
-                        <svg className="w-6 h-6 stroke-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                    </a>
                 </div>
-                <p className="flex items-center justify-center w-16 h-16 mt-auto bg-gray-900 hover:bg-gray-700 hover:text-gray-300" onClick={() => logout()}>
+                <Link to={"/user"} className={`flex items-center justify-center w-16 h-16 mt-auto hover:bg-gray-700 hover:text-gray-300` + returnStyle("/user")}>
                     <svg className="w-6 h-6 stroke-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5,3H11A3,3 0 0,1 14,6V10H13V6A2,2 0 0,0 11,4H5A2,2 0 0,0 3,6V19A2,2 0 0,0 5,21H11A2,2 0 0,0 13,19V15H14V19A3,3 0 0,1 11,22H5A3,3 0 0,1 2,19V6A3,3 0 0,1 5,3M8,12H19.25L16,8.75L16.66,8L21.16,12.5L16.66,17L16,16.25L19.25,13H8V12Z" />
+                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0a8.949 8.949 0 0 0 4.951-1.488A3.987 3.987 0 0 0 11 14H9a3.987 3.987 0 0 0-3.951 3.512A8.948 8.948 0 0 0 10 19Zm3-11a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                     </svg>
-                </p>
+                </Link>
 
             </div>
         </>

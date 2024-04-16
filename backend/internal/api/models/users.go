@@ -28,6 +28,16 @@ type User struct {
 	Password string `json:"password"`
 }
 
+type UserRes struct {
+	Name     string `json:"name"`
+	Lastname string `json:"lastname"`
+	Email    string `json:"email"`
+}
+
+type PasswordReq struct {
+	Password string `json:"password"`
+}
+
 func Middleware(request *http.Request) (string, error) {
 	cookie, err := request.Cookie("session")
 	if err != nil {
@@ -116,6 +126,34 @@ func DeleteSession(sessionCookie string) error {
 
 	if errDB != nil {
 		return errDB
+	}
+	return nil
+}
+
+func GetUserInfoDb(email string) (*UserRes, error) {
+	var user UserRes
+	row := database.DB.QueryRow("SELECT name, lastname,email FROM users WHERE email = $1", email)
+	errDb := row.Scan(&user.Name, &user.Lastname, &user.Email)
+	if errDb != nil {
+		return nil, errDb
+	}
+
+	return &user, nil
+}
+
+func UpdatePassword(email string, password string) error {
+	// Hash the password
+	_, err := database.DB.Exec("UPDATE users SET password = $1 WHERE email = $2", password, email)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CloseAllSessions(email string) error {
+	_, err := database.DB.Exec("DELETE FROM sessions WHERE email = $1", email)
+	if err != nil {
+		return err
 	}
 	return nil
 }

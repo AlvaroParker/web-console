@@ -29,11 +29,13 @@ func HandleExecution(code *CodeReq) ([]byte, error) {
 	case "c":
 		return HandleGenericExecution(*code.Code, "./run.sh", "customc", "latest", "/app", "main.c")
 	case "cpp":
-		return HandleGenericExecution(*code.Code, "./runcpp.sh", "customcpp", "latest", "/app", "main.cpp") // ?? not working
+		return HandleGenericExecution(*code.Code, "./runcpp.sh", "customcpp", "latest", "/app", "main.cpp")
 	case "typescript":
 		return HandleGenericExecution(*code.Code, "ts-node /app/index.ts", "customts", "latest", "/app", "index.ts")
 	case "go":
 		return HandleGenericExecution(*code.Code, "go run /app/main.go", "customgo", "latest", "/app", "main.go")
+	case "bash":
+		return HandleGenericExecution(*code.Code, "bash /app/main.sh", "custombash", "latest", "/app", "main.sh")
 	default:
 		return nil, nil
 	}

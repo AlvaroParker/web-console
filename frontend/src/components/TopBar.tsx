@@ -4,7 +4,8 @@ import { capitalize } from "./util"
 interface Lang {
     name: string
     link: string
-    prettyName: string
+    prettyName: string,
+    invert?: boolean
 }
 
 export function TopBar(
@@ -12,18 +13,20 @@ export function TopBar(
         setLanguage: (lang: string) => void,
         setContent: (content: string) => void
         handleDownload: () => void,
-        handleRunCode: () => void,
+        handleRunCode: () => Promise<void>,
         clearScreen: () => void
     }
 ) {
+    const [loading, setLoading] = React.useState(false)
     const [menuState, setMenuState] = React.useState(" hidden ")
     const languages: Lang[] = [
-        { name: 'rust', link: 'https://cdn.svgporn.com/logos/rust.svg', prettyName: 'Rust' },
+        { name: 'rust', link: 'https://cdn.svgporn.com/logos/rust.svg', prettyName: 'Rust', invert: true },
         { name: 'python', link: 'https://cdn.svgporn.com/logos/python.svg', prettyName: 'Python' },
         { name: 'typescript', link: 'https://cdn.svgporn.com/logos/typescript-icon.svg', prettyName: 'TypeScript' },
         { name: 'c', link: 'https://cdn.svgporn.com/logos/c.svg', prettyName: 'C' },
         { name: 'cpp', link: 'https://cdn.svgporn.com/logos/c-plusplus.svg', prettyName: 'C++' },
         { name: 'go', link: 'https://cdn.svgporn.com/logos/go.svg', prettyName: 'Go' },
+        { name: 'bash', link: 'https://cdn.svgporn.com/logos/bash-icon.svg', prettyName: 'bash' },
     ]
     const [lang, setLangBar] = React.useState(languages[0].name)
     const [langLink, setLangLink] = React.useState(languages[0].link)
@@ -65,6 +68,12 @@ export function TopBar(
         const f = fileInputRef.current as HTMLInputElement; // Assert the type of the ref
         f.click()
     };
+    const wrapperRunCode = () => {
+        setLoading(true)
+        props.handleRunCode().then(() => {
+            setLoading(false)
+        })
+    }
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const eventTarget = event.target as HTMLInputElement;
@@ -179,9 +188,20 @@ export function TopBar(
 
                         </div>
                     </div>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 cursor-pointer" onClick={() => props.handleRunCode()}>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 cursor-pointer" onClick={() => loading?()=>{}:wrapperRunCode()}>
+                        {
+                            loading &&
+                        <div
+                            className="inline-block h-4 w-4 animate-spin rounded-full border-4 border-solid border-current border-e-transparent align-[-0.125em] text-surface motion-reduce:animate-[spin_1.5s_linear_infinite] dark:text-white mr-2"
+                            role="status">
+                            <span
+                                className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]"
+                            >Loading...</span
+                            >
+                        </div>
+                        }
                         <p className="mr-2">Run code</p>
-                        <button type="button" className="relative rounded-full bg-gray-800 p-1 text-green-400 hover:text-green-600 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
+                        <button disabled={loading} type="button" className="relative rounded-full bg-gray-800 p-1 text-green-400 hover:text-green-600 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true">
                                 <path d="M19 10.2679C20.3333 11.0377 20.3333 12.9623 19 13.7321L10 18.9282C8.66667 19.698 7 18.7358 7 17.1962L7 6.80385C7 5.26425 8.66667 4.302 10 5.0718L19 10.2679Z" strokeWidth="2" strokeLinejoin="round" />
                             </svg>

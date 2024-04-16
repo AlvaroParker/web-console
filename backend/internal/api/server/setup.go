@@ -36,6 +36,9 @@ func CreateServer() *http.Server {
 	http.HandleFunc("/signin", handlers.CreateAccount)
 	http.HandleFunc("/auth", handlers.AuthUser)
 	http.HandleFunc("/logout", handlers.LogoutHandler)
+	http.HandleFunc("/user/info", handlers.UserInfo)
+	http.HandleFunc("/user/password", handlers.ChangePassword)
+	http.HandleFunc("/user/close-sessions", handlers.CloseSessions)
 
 	http.HandleFunc("/console/ws", handlers.ConsoleHandler)
 	http.HandleFunc("/container", handlers.ContainerHandler)

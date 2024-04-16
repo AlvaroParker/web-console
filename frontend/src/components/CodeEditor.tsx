@@ -16,8 +16,8 @@ export function CodeEditor() {
     const initialized = useRef(false);
     const [lang, setLang] = useState('rust' as string)
     const [content, setContent] = useState('' as string)
-    const terminal: React.MutableRefObject<Terminal |null>= useRef(null)
-
+    const terminal: React.MutableRefObject<Terminal | null> = useRef(null)
+    const fitAddon: React.MutableRefObject<FitAddon | null> = useRef(null)
 
     function handleEditorDidMount(editor: monaco.editor.IStandaloneCodeEditor, _: Monaco) {
         editorRef.current = editor;
@@ -27,7 +27,9 @@ export function CodeEditor() {
         if (editorRef.current) {
             editorRef.current.layout({} as monaco.editor.IDimension);
         }
-        FitAddon.bind(terminal.current as Terminal)
+        if (fitAddon.current) {
+            fitAddon.current.fit()
+        }
     };
 
     useEffect(() => {
@@ -38,10 +40,11 @@ export function CodeEditor() {
         document.title = 'Web Terminal | Code Editor';
         if (!initialized.current) {
             initialized.current = true;
-            const term = LoadTerminal('terminal')
-            terminal.current = term
-            const { rows, cols } = term
-            console.log(rows, cols)
+             LoadTerminal('terminal').then(([term, fit]) => {
+                terminal.current = term
+                fitAddon.current = fit
+
+            })
         }
     }, [])
 
@@ -50,24 +53,33 @@ export function CodeEditor() {
     }
 
     const handleRunCode = async () => {
-        console.log('Running code...');
         const [data, response] = await RunCode(content, lang)
         switch (response) {
             case RunCodeRes.UNAUTHORIZED:
                 navigate('/login')
                 break;
             case RunCodeRes.OK:
-                terminal.current?.write('\r\n')
-                terminal.current?.write(data)
+                if (terminal.current) {
+                    terminal.current.write('\r\n')
+                    terminal.current.write(data)
+                    terminal.current.write('\r\n')
+                }
                 break
             default:
+                const RED = '\x1b[31m'
+                const RESET = '\x1b[0m'
+                if (terminal.current) {
+                    terminal.current.write('\r\n')
+                    terminal.current.write(`${RED}   Error while running code. Try again later   ${RESET}`)
+                    terminal.current.write('\r\n')
+                }
                 console.log('Error running code');
                 break
         }
     }
 
     const handleDownload = () => {
-        const file = new Blob([content], {type: 'text/plain'});
+        const file = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(file);
         const a = document.createElement('a');
         a.href = url;
@@ -101,23 +113,28 @@ export function CodeEditor() {
 
     return (
         <>
-        <TopBar setLanguage={setLang} setContent={setContent} handleDownload={handleDownload} handleRunCode={handleRunCode} clearScreen={clearScreen}/>
-        <div className="flex flex-row h-screen"> {/* Changed flex-col to flex-row */}
-            <Editor
-                className="flex-1 mx-2"  // Adjust margins as needed
-                options={{ automaticLayout: true }}
-                defaultLanguage="rust"
-                language={lang}
-                height="90%"  // Set height to 100% to fill parent vertically
-                defaultValue="// Add some code here!"
-                theme="vs-dark"
-                onMount={handleEditorDidMount}
-                onChange={(value, _) => setContent(value ?? '')}
-                value={content}
-            />
-            <div className="flex-1 mx-2 h-[90%]" id='terminal'>
+            <div className='h-full flex flex-col'>
+                <TopBar setLanguage={setLang} setContent={setContent} handleDownload={handleDownload} handleRunCode={handleRunCode} clearScreen={clearScreen} />
+                <div className="flex-1 flex h-full mb-10"> {/* Changed flex-col to flex to make it a row */}
+                    <div className="flex-1 mx-2 h-full" id='editor-wrapper'> {/* This div is for the Editor, using flex-1 to take half space */}
+                        <Editor
+                            options={{ automaticLayout: true, fontFamily: 'JetBrains Mono' }}
+                            defaultLanguage="rust"
+                            language={lang}
+                            height="100%"  // Set height to 100% to fill parent vertically
+                            defaultValue="// Add some code here!"
+                            theme="vs-dark"
+                            onMount={handleEditorDidMount}
+                            onChange={(value, _) => setContent(value ?? '')}
+                            value={content}
+                        />
+                    </div>
+                    <div className="flex-1 mx-2 h-full overflow-auto" id='terminal'> {/* Another flex-1 div for terminal, with some styling */}
+                        {/* Terminal content here */}
+                    </div>
+                </div>
             </div>
-        </div>
+
         </>
     );
 }
