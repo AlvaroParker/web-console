@@ -125,7 +125,6 @@ func LogoutHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func UserInfo(writer http.ResponseWriter, request *http.Request) {
-	log.Info("UserInfo")
 	models.CorsHeaders(writer, request)
 	if request.Method == http.MethodOptions {
 		writer.Header().Set("Access-Control-Allow-Methods", "GET")

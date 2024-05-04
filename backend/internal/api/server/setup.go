@@ -41,6 +41,7 @@ func CreateServer() *http.Server {
 	http.HandleFunc("/user/close-sessions", handlers.CloseSessions)
 
 	http.HandleFunc("/console/ws", handlers.ConsoleHandler)
+	http.HandleFunc("/container/resize", handlers.HandleResize)
 	http.HandleFunc("/container", handlers.ContainerHandler)
 	http.HandleFunc("/container/", handlers.ContainerHandler)
 	http.HandleFunc("/container/info", handlers.InfoContainer)

@@ -29,9 +29,11 @@ type User struct {
 }
 
 type UserRes struct {
-	Name     string `json:"name"`
-	Lastname string `json:"lastname"`
-	Email    string `json:"email"`
+	Name              string        `json:"name"`
+	Lastname          string        `json:"lastname"`
+	Email             string        `json:"email"`
+	ActiveContainers  int           `json:"active_containers"`
+	RunningContainers []TerminalRes `json:"running_containers"`
 }
 
 type PasswordReq struct {
@@ -133,11 +135,20 @@ func DeleteSession(sessionCookie string) error {
 func GetUserInfoDb(email string) (*UserRes, error) {
 	var user UserRes
 	row := database.DB.QueryRow("SELECT name, lastname,email FROM users WHERE email = $1", email)
-	errDb := row.Scan(&user.Name, &user.Lastname, &user.Email)
+	if errDb := row.Scan(&user.Name, &user.Lastname, &user.Email); errDb != nil {
+		return nil, errDb
+	}
+	count, errDb := CountContainers(email)
 	if errDb != nil {
 		return nil, errDb
 	}
+	user.ActiveContainers = count
 
+	runningContainers, errDbRunning := GetRunningContainers(email)
+	if errDbRunning != nil {
+		return nil, errDbRunning
+	}
+	user.RunningContainers = runningContainers
 	return &user, nil
 }
 

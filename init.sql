@@ -39,3 +39,4 @@ INSERT INTO images(image_tag, commands) VALUES ('ubuntu:22.04', '{"/bin/bash", "
 INSERT INTO images(image_tag, commands) VALUES ('python:3.11', '{"/usr/bin/python3", "/bin/bash", "/usr/bin/sh"}');
 INSERT INTO images(image_tag, commands) VALUES ('alpine:3.14', '{"/bin/sh"}');
 INSERT INTO images(image_tag, commands) VALUES ('debian:stable', '{"/bin/bash","/bin/sh"}');
+INSERT INTO images(image_tag, commands) VALUES ('archlinux:base-devel', '{"/bin/bash","/bin/sh"}');

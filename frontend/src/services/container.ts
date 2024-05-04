@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import { API_URL } from "./consts";
 
 axios.defaults.withCredentials = true
@@ -217,11 +217,46 @@ const FullStop = async (): Promise<boolean> => {
 
 }
 
+export enum ResizeRes {
+    OK = 200,
+    NO_CONTENT = 204,
+    UNAUTHORIZED = 401,
+    INTERNAL_SERVER_ERROR = 500,
+    UNKNOWN = 0
+}
+
+const ResizeContainer = async (width: number, height: number, id: string): Promise<ResizeRes> => {
+    try {
+        const response = await axios.get(`${API_URL}/container/resize?id=${id}&width=${width}&height=${height}`)
+        switch (response.status) {
+            case 200:
+                return ResizeRes.OK
+            case 204:
+                return ResizeRes.NO_CONTENT
+            case 401:
+                return ResizeRes.UNAUTHORIZED
+            case 500:
+                return ResizeRes.INTERNAL_SERVER_ERROR
+        }
+    } catch (err) {
+        if (isAxiosError(err)) {
+            switch (err.response?.status) {
+                case 401:
+                    return ResizeRes.UNAUTHORIZED
+                case 500:
+                    return ResizeRes.INTERNAL_SERVER_ERROR
+            }
+        }
+    }
+    return ResizeRes.UNKNOWN
+}
+
 export {
     CreateContainer,
     ListContainers,
     DeleteContainer,
     GetContainerInfo,
     GetValidImages,
-    FullStop
+    FullStop,
+    ResizeContainer
 }

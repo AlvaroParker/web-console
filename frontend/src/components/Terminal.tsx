@@ -2,7 +2,9 @@ import './Terminal.css'
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { LoadTerminal, capitalize, checkAuth } from './util'
-import { ContainerRes, GetContainerInfo, InfoContainerRes } from '../services/container'
+import { ContainerRes, GetContainerInfo, InfoContainerRes, ResizeContainer, ResizeRes } from '../services/container'
+import { FitAddon } from '@xterm/addon-fit'
+import { Terminal } from '@xterm/xterm'
 
 export function TerminalComponent({ wsURL }: { wsURL: string }) {
     const params = useParams()
@@ -10,6 +12,9 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
     const initialized = useRef(false)
     const navigate = useNavigate()
     const [terminalInfo, setTerminalInfo] = React.useState<ContainerRes | null>(null)
+    const didAuth = useRef(false)
+    const fitAddon: React.MutableRefObject<FitAddon | null> = useRef(null)
+    const termRef: React.MutableRefObject<Terminal | null> = useRef(null)
 
     useEffect(() => {
         if (params.containerId !== undefined) {
@@ -20,10 +25,49 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
             })
         }
     }, [])
+function resizeTerminal(width: number, height: number){
+    // Haven't resized in 100ms!
+    if (!params.containerId) {
+        return
+    }
+    ResizeContainer(width, height, params.containerId).then((response) => {
+        switch (response) {
+            case ResizeRes.OK:
+                break;
+            case ResizeRes.NO_CONTENT:
+                console.log("No content")
+                break;
+            case ResizeRes.UNAUTHORIZED:
+                navigate("/login")
+                break;
+            case ResizeRes.INTERNAL_SERVER_ERROR:
+                console.log("Internal server error")
+                break;
+            case ResizeRes.UNKNOWN:
+                console.log("Unknown")
+                break;
+        }
+    })
+}
+
+    var doit = 0;
+    window.onresize = () => {
+        if (fitAddon.current) {
+            fitAddon.current.fit()
+            if (termRef.current) {
+                clearTimeout(doit);
+                const {rows, cols} = termRef.current
+                doit = setTimeout(() => resizeTerminal(cols, rows), 1000);
+            }
+        }
+    };
 
 
-    checkAuth(navigate)
     useEffect(() => {
+        if (!didAuth.current) {
+            didAuth.current = true
+            checkAuth(navigate)
+        }
 
         document.title = "Web Terminal | Console"
         if (!initialized.current) {
@@ -34,8 +78,7 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
                 fit.fit()
                 const { rows, cols } = term
 
-                const ws = new WebSocket(`ws://${wsURL}/console/ws?hash=${params.containerId}&width=${cols}&height=${rows}`)
-
+                const ws = new WebSocket(`ws://${wsURL}/console/ws?hash=${params.containerId}&width=${cols}&height=${rows}&logs=false`)
                 ws.addEventListener('open', () => {
                     ws.send('\n')
                 })
@@ -46,16 +89,17 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
                 ws.addEventListener('error', (error) => {
                     console.error("WebSocket Error: ", error);
                 });
-                ws.addEventListener('close', (event) => {
+                ws.addEventListener('close', (_) => {
                     // setEndTerminal(true)
                     // term.dispose()
-                    console.log("WebSocket closed: ", event);
                     navigate('/')
                     // try reconnect
                 });
                 term.onData((data, _) => {
                     ws.send(data)
                 })
+                termRef.current = term
+                fitAddon.current = fit
             })
 
         }

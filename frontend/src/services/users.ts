@@ -1,5 +1,6 @@
 import axios, { isAxiosError } from "axios"
 import { API_URL } from "./consts"
+import { ContainerRes } from "./container"
 
 // axios allow CORS by default
 axios.defaults.withCredentials = true
@@ -92,6 +93,8 @@ export interface UserInfoPayload {
     name: string,
     lastname: string,
     email: string,
+    active_containers: number,
+    running_containers: Array<ContainerRes>
 }
 
 export enum UserInfoRes {

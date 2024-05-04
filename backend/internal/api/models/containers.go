@@ -157,6 +157,49 @@ func GetValidImages() ([]ImagesDB, error) {
 	return images, nil
 }
 
+func GetRunningContainers(email string) ([]TerminalRes, error) {
+	containers, errorDb := GetTerminals(email)
+	if errorDb != nil {
+		return nil, errorDb
+	}
+	var runningContainers []TerminalRes
+	client, clientErr := client.NewClientWithOpts(client.FromEnv)
+	if clientErr != nil {
+		return nil, clientErr
+	}
+	for _, container := range containers {
+		if isRunning(container.ContainerID, client) {
+			runningContainers = append(runningContainers, container)
+		}
+	}
+	return runningContainers, nil
+}
+
+func isRunning(containerID string, client *client.Client) bool {
+	containerJson, errClient := client.ContainerInspect(context.Background(), containerID)
+	if errClient != nil {
+		return false
+	}
+	return containerJson.State.Running
+}
+
+func ContainerResize(height uint, width uint, id string) error {
+	client, errClient := client.NewClientWithOpts(client.FromEnv)
+	if errClient != nil {
+		return errClient
+	}
+	if isRunning(id, client) {
+		err := client.ContainerResize(context.Background(), id, container.ResizeOptions{
+			Height: height,
+			Width:  width,
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func FullStop(email string) error {
 	rowsDB, errorDb := database.DB.Query("SELECT containerid FROM terminals WHERE email = $1", email)
 	if errorDb != nil {

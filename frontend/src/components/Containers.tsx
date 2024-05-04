@@ -1,6 +1,6 @@
 import React, { useEffect } from "react"
 import { ContainerRes, DeleteContainer, DeleteContainerRes, ListContainers, ListContainersRes } from "../services/container"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { capitalize } from "./util"
 
 // Todo: Rerender component on delete
@@ -9,7 +9,8 @@ export function ContainersComponent() {
         ["ubuntu:22.04", "https://cdn.svgporn.com/logos/ubuntu.svg"],
         ["python:3.11", "https://cdn.svgporn.com/logos/python.svg"],
         ["debian:stable", "https://cdn.svgporn.com/logos/debian.svg"],
-        ["alpine:3.14", "https://cdn.svgporn.com/logos/linux-tux.svg"]
+        ["alpine:3.14", "https://cdn.svgporn.com/logos/linux-tux.svg"],
+        ["archlinux:base-devel", "https://cdn.svgporn.com/logos/archlinux.svg"],
     ])
     const [containers, setContainers] = React.useState<ContainerRes[] | null>(null)
     const navigate = useNavigate()
@@ -49,9 +50,6 @@ export function ContainersComponent() {
     useEffect(() => {
         updateContainers()
     }, [updated])
-    const goToMachine = (containerid: string) => {
-        navigate(`/terminal/${containerid}`)
-    }
 
     const handleClick = (e: React.MouseEvent, id: string, name: string) => {
         e.preventDefault()
@@ -99,11 +97,11 @@ export function ContainersComponent() {
                                             <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 40 40">
                                                 <image xlinkHref={hashMap.get(item.image + ":" + item.tag)} width="40" />    
                                             </svg>
-                                            <div className="cursor-pointer space-y-2 group" onClick={() => goToMachine(item.containerid)}>
+                                            <Link to={`/terminal/${item.containerid}`} className="cursor-pointer space-y-2 group">
                                                 <h2 className="text-gray-100 text-2xl font-semibold">{item.name}</h2>
                                                 <h3 className="text-gray-400 text-xl">{capitalize(item.image)}:{item.tag}</h3>
                                                 <button className="block text-green-400 group-hover:text-green-800 transition duration-200">Access Machine →</button>
-                                            </div>
+                                            </Link>
                                         </div>
                                         <button onClick={(e) => handleClick(e, item.containerid, item.name)}>
                                             <svg className="w-6 h-6 stroke-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

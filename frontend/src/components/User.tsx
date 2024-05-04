@@ -1,40 +1,11 @@
 import { useEffect, useRef, useState } from "react"
-import { UserInfoPayload, UserInfo, UserInfoRes, LogoutRes, LogOut } from "../services/users"
-import { useNavigate } from "react-router-dom"
+import { UserInfoPayload, UserInfo, UserInfoRes } from "../services/users"
+import { Link, useNavigate } from "react-router-dom"
 
 export function UserComponent() {
     const [userInfo, setUserInfo] = useState<UserInfoPayload | null>(null)
     const [showModal, setShowModal] = useState(false)
-    const [password, setPassword] = useState("")
     const navigate = useNavigate()
-
-    const logout = async () => {
-        const res = await LogOut()
-        switch (res) {
-            case LogoutRes.OK:
-                navigate("/login")
-                // TODO
-                break
-            case LogoutRes.INTERNAL_SERVER_ERROR:
-                navigate("/login")
-                // TODO
-                break
-            case LogoutRes.UNAUTHORIZED:
-                // TODO
-                break
-            case LogoutRes.UNKNOWN:
-                navigate("/login")
-                // TODO
-                break
-        }
-    }
-
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.name === "password") {
-            setPassword(e.target.value)
-        }
-    }
 
     const didRequest = useRef(false)
     useEffect(() => {
@@ -43,6 +14,8 @@ export function UserComponent() {
             UserInfo().then(([userInfo, res]) => {
                 if (res === UserInfoRes.OK) {
                     setUserInfo(userInfo)
+                } else if (res == UserInfoRes.UNAUTHORIZED) {
+                    navigate("/login")
                 }
 
             })
@@ -50,14 +23,14 @@ export function UserComponent() {
     })
     return (
         <>
-            <section className="w-[34rem] mx-auto bg-gray-900 rounded-2xl px-8 py-6 shadow-lg">
+            <section className="w-[27rem] mx-auto bg-gray-900 rounded-2xl px-8 py-6 shadow-lg">
                 <div className="flex items-center justify-between">
                     <span className="text-gray-400 text-sm">Regular user</span>
                     <span className="text-emerald-400">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" onClick={() => setShowModal(true)}>
-                            <circle cx="12" cy="11.9999" r="9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                            <rect x="12" y="8" width="0.01" height="0.01" stroke-width="3" stroke-linejoin="round" />
-                            <path d="M12 12V16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            <circle cx="12" cy="11.9999" r="9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <rect x="12" y="8" width="0.01" height="0.01" strokeWidth="3" strokeLinejoin="round" />
+                            <path d="M12 12V16" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                     </span>
                 </div>
@@ -68,15 +41,25 @@ export function UserComponent() {
                 <div className="mt-8 ">
                     <h2 className="text-white font-bold text-2xl tracking-wide">{userInfo?.name}<br /> {userInfo?.lastname}</h2>
                 </div>
-                <p className="text-emerald-400 font-semibold mt-2.5" >
-                    Active
-                </p>
+                <div>
+                    {
+                        userInfo?.running_containers != undefined && userInfo?.running_containers.length > 0 &&
+                        <p className="text-emerald-400 font-semibold mt-2.5" >
+                            {userInfo?.running_containers.length} running container{userInfo?.running_containers.length > 1 ? "s" : ""}
+                        </p>
+
+                    }
+                    <Link to="/" className="text-yellow-400 font-semibold mt-2.5" >
+                        {userInfo?.active_containers} active containers
+                    </Link>
+
+                </div>
 
                 <div className="mt-3 text-white text-sm">
                     <span className="text-gray-400 font-semibold">{userInfo?.email}</span>
                 </div>
 
-                <button className="w-full mt-6 bg-emerald-400 text-white font-semibold py-2 px-4 rounded-lg hover:bg-emerald-500 transition duration-200" onClick={() => {}}>Change password</button>
+                <button className="w-full mt-6 bg-emerald-400 text-white font-semibold py-2 px-4 rounded-lg hover:bg-emerald-500 transition duration-200" onClick={() => { }}>Change password</button>
 
             </section>
 

@@ -31,6 +31,7 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	log.Debug("[handlers.ConsoleHandler] Request received")
 	email, errAuth := models.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -42,6 +43,8 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 	raw_height := request.URL.Query().Get("height")
 	width, errW := strconv.Atoi(raw_width)
 	height, errH := strconv.Atoi(raw_height)
+	logs := request.URL.Query().Get("logs")
+	logsBool := logs == "true"
 
 	if hash == "" || raw_width == "" || raw_height == "" || errW != nil || errH != nil {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -86,6 +89,6 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 
 	defer ws_conn.Close()
 	fmt.Println("Connection upgraded, attaching container...")
-	webContainer.AttachContainer(true, ws_conn, width, height)
+	webContainer.AttachContainer(true, ws_conn, logsBool, width, height)
 	defer webContainer.Close()
 }

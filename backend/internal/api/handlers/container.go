@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/AlvaroParker/web-console/internal/api/models"
 	"github.com/charmbracelet/log"
+	"github.com/docker/docker/client"
 	"github.com/docker/docker/errdefs"
 )
 
@@ -136,6 +139,7 @@ func DeleteContainer(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	log.Debug("[handlers.DeleteContainer] Request received")
 	email, errAuth := models.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -174,6 +178,8 @@ func ListContainers(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	log.Debug("[handlers.ListContainers] Request received")
+
 	user, errAuth := models.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -203,6 +209,7 @@ func ListContainers(writer http.ResponseWriter, request *http.Request) {
 	return
 }
 
+// Get the info of a container by it's id
 func InfoContainer(writer http.ResponseWriter, request *http.Request) {
 	models.CorsHeaders(writer, request)
 	if request.Method == http.MethodOptions {
@@ -211,13 +218,13 @@ func InfoContainer(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 		return
 	}
-	switch request.Method {
-	case http.MethodGet:
-		break
-	default:
+	if request.Method != http.MethodGet {
 		writer.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+
+	log.Debug("[handlers.InfoContainer] Request received")
+
 	email, errAuth := models.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -251,6 +258,8 @@ func InfoContainer(writer http.ResponseWriter, request *http.Request) {
 	return
 }
 
+// This handler will return the list of valid images, and the commands that are valid for each images
+// When a user creates a new container, the image and the command must be in the list of valid images
 func GetImages(writer http.ResponseWriter, request *http.Request) {
 	models.CorsHeaders(writer, request)
 	if request.Method == http.MethodOptions {
@@ -259,13 +268,13 @@ func GetImages(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 		return
 	}
-	switch request.Method {
-	case http.MethodGet:
-		break
-	default:
+	if request.Method == http.MethodGet {
 		writer.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+
+	log.Debug("[handlers.GetImages] Request received")
+
 	imagesDB, err := models.GetValidImages()
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -292,13 +301,13 @@ func HandleFullStop(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 		return
 	}
-	switch request.Method {
-	case http.MethodPost:
-		break
-	default:
+	if request.Method != http.MethodPost {
 		writer.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+
+	log.Debug("[handlers.HandleFullStop] Request received")
+
 	email, errAuth := models.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -311,6 +320,44 @@ func HandleFullStop(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	return
+}
+
+// This handler will resize the tty of container with the given id
+func HandleResize(writer http.ResponseWriter, request *http.Request) {
+	models.CorsHeaders(writer, request)
+	if request.Method == http.MethodOptions {
+		writer.Header().Set("Access-Control-Allow-Methods", "GET")
+		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
+	if request.Method != http.MethodGet {
+		writer.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	log.Debug("[handlers.HandleResize] Request received")
+
+	_, errAuth := models.Middleware(request)
+	if errAuth != nil {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Get query parameters id
+	id := request.URL.Query().Get("id")
+	width, errW := strconv.ParseUint(request.URL.Query().Get("width"), 10, 0)
+	height, errH := strconv.ParseUint(request.URL.Query().Get("height"), 10, 0)
+	if id == "" || errW != nil || errH != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if err := models.ContainerResize(uint(height), uint(width), id); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		log.Error("[handlers.HandleResize] Error while resizing the container: ", err)
+		return
+	}
 }
 
 // Check if the image provided is valid to create a new container
@@ -329,4 +376,12 @@ func isAllowed(container models.Container) bool {
 		}
 	}
 	return false
+}
+
+func isRunning(containerID string, client *client.Client) bool {
+	containerJson, errClient := client.ContainerInspect(context.Background(), containerID)
+	if errClient != nil {
+		return false
+	}
+	return containerJson.State.Running
 }

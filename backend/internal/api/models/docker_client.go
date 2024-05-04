@@ -157,12 +157,13 @@ func (wc *WebContainer) Create() (*string, error) {
 	return wc.id, nil
 }
 
-func (wc *WebContainer) AttachContainer(resize bool, wsConn *websocket.Conn, width int, height int) error {
+func (wc *WebContainer) AttachContainer(resize bool, wsConn *websocket.Conn, logs bool, width int, height int) error {
 	attachOptions := container.AttachOptions{
 		Stdin:  true,
 		Stdout: true,
 		Stderr: true,
 		Stream: true,
+		Logs:   logs,
 	}
 
 	resp, errAttach := wc.client.ContainerAttach(wc.context, *wc.id, attachOptions)
@@ -205,7 +206,6 @@ func handle_input(conn net.Conn, wsConn *websocket.Conn) {
 			break
 		}
 		conn.Write(message)
-
 	}
 }
 
