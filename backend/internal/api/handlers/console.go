@@ -39,14 +39,14 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	hash := request.URL.Query().Get("hash")
-	raw_width := request.URL.Query().Get("width")
-	raw_height := request.URL.Query().Get("height")
-	width, errW := strconv.Atoi(raw_width)
-	height, errH := strconv.Atoi(raw_height)
+	rawWidth := request.URL.Query().Get("width")
+	rawHeight := request.URL.Query().Get("height")
+	width, errW := strconv.Atoi(rawWidth)
+	height, errH := strconv.Atoi(rawHeight)
 	logs := request.URL.Query().Get("logs")
 	logsBool := logs == "true"
 
-	if hash == "" || raw_width == "" || raw_height == "" || errW != nil || errH != nil {
+	if hash == "" || rawWidth == "" || rawHeight == "" || errW != nil || errH != nil {
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -76,19 +76,19 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 		return true
 	}
 
-	ws_conn, err := upgrader.Upgrade(writer, request, nil)
+	wsConn, err := upgrader.Upgrade(writer, request, nil)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error while upgrading the connection: ", err)
 	}
 
-	ws_conn.SetCloseHandler(func(code int, text string) error {
+	wsConn.SetCloseHandler(func(code int, text string) error {
 		go webContainer.Close()
 		fmt.Println("Connection to client closed with code ", code)
 		return nil
 	})
 
-	defer ws_conn.Close()
+	defer wsConn.Close()
 	fmt.Println("Connection upgraded, attaching container...")
-	webContainer.AttachContainer(true, ws_conn, logsBool, width, height)
+	webContainer.AttachContainer(true, wsConn, logsBool, width, height)
 	defer webContainer.Close()
 }

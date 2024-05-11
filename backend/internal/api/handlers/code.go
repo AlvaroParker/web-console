@@ -51,5 +51,4 @@ func PostCodeHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 	writer.Write(output)
 	writer.WriteHeader(http.StatusOK)
-	return
 }

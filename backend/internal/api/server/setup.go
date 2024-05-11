@@ -19,9 +19,9 @@ func CreateServer() *http.Server {
 		panic("Error loading .env file")
 	}
 
-	dbUrl := os.Getenv("DATABASE_URL")
-	log.Debug("Connecting with url ", dbUrl)
-	database.InitDB(dbUrl)
+	dbURL := os.Getenv("DATABASE_URL")
+	log.Debug("Connecting with url ", dbURL)
+	database.InitDB(dbURL)
 
 	s := &http.Server{
 		Addr:           ":8080",

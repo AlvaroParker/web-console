@@ -50,12 +50,12 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 
 	matchPassword := comparePassword(DBUser.Password, user.Password)
 	if matchPassword {
-		cookie_val, errCook := models.GenerateCookie(user.Email)
+		cookieVal, errCook := models.GenerateCookie(user.Email)
 		if errCook != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		http.SetCookie(writer, cookie_val)
+		http.SetCookie(writer, cookieVal)
 		writer.WriteHeader(http.StatusOK)
 	} else {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -78,8 +78,8 @@ func CreateAccount(writer http.ResponseWriter, request *http.Request) {
 	}
 	var user models.User
 
-	errJson := json.NewDecoder(request.Body).Decode(&user)
-	if errJson != nil {
+	errJSON := json.NewDecoder(request.Body).Decode(&user)
+	if errJSON != nil {
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -121,7 +121,6 @@ func LogoutHandler(writer http.ResponseWriter, request *http.Request) {
 	cookie.Expires = models.ExpireCookie()
 	http.SetCookie(writer, cookie)
 	writer.WriteHeader(http.StatusOK)
-	return
 }
 
 func UserInfo(writer http.ResponseWriter, request *http.Request) {
@@ -144,14 +143,14 @@ func UserInfo(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	userDb, errUser := models.GetUserInfoDb(user)
+	userDB, errUser := models.GetUserInfoDb(user)
 	if errUser != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	jsonRes, errJson := json.Marshal(userDb)
-	if errJson != nil {
+	jsonRes, errJSON := json.Marshal(userDB)
+	if errJSON != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -199,8 +198,6 @@ func ChangePassword(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
-	return
 }
 
 func CloseSessions(writer http.ResponseWriter, request *http.Request) {
@@ -230,7 +227,6 @@ func CloseSessions(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	return
 }
 
 func AuthUser(writer http.ResponseWriter, request *http.Request) {
@@ -248,5 +244,4 @@ func AuthUser(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	return
 }

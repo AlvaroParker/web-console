@@ -13,7 +13,7 @@ import (
 	"github.com/docker/docker/errdefs"
 )
 
-const LIMIT_CONTAINERS = 8
+const LimitContainers = 8
 
 func ContainerHandler(writer http.ResponseWriter, request *http.Request) {
 	models.CorsHeaders(writer, request)
@@ -66,15 +66,15 @@ func NewContainer(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if count >= LIMIT_CONTAINERS {
+	if count >= LimitContainers {
 		log.Warn("[handlers.NewContainer] User has reached the limit of containers")
 		writer.WriteHeader(http.StatusForbidden)
 		return
 	}
 
 	var container models.Container
-	if errJson := json.NewDecoder(request.Body).Decode(&container) != nil; errJson {
-		log.Warn("[handlers.NewContainer] Error while decoding the request body: ", errJson)
+	if errJSON := json.NewDecoder(request.Body).Decode(&container) != nil; errJSON {
+		log.Warn("[handlers.NewContainer] Error while decoding the request body: ", errJSON)
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -187,10 +187,10 @@ func ListContainers(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	// rowsDB
-	terminals, errDb := models.GetTerminals(user)
-	if errDb != nil {
+	terminals, errDB := models.GetTerminals(user)
+	if errDB != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		log.Error("[handlers.ListContainers] Error while querying the database: ", errDb)
+		log.Error("[handlers.ListContainers] Error while querying the database: ", errDB)
 		return
 	}
 	if len(terminals) == 0 {
@@ -198,15 +198,14 @@ func ListContainers(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	// Convert the list of `Terminal` to JSON
-	jsonTerminals, errJson := json.Marshal(terminals)
-	if errJson != nil {
+	jsonTerminals, errJSON := json.Marshal(terminals)
+	if errJSON != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		log.Error("[handlers.ListContainers] Error while marshalling the terminals: ", errJson)
+		log.Error("[handlers.ListContainers] Error while marshalling the terminals: ", errJSON)
 		return
 	}
 	writer.Header().Add("Content-Type", "application/json")
 	writer.Write(jsonTerminals)
-	return
 }
 
 // Get the info of a container by it's id
@@ -246,16 +245,15 @@ func InfoContainer(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	// Convert to json
-	jsonTerminal, errJson := json.Marshal(containerInfo)
-	if errJson != nil {
+	jsonTerminal, errJSON := json.Marshal(containerInfo)
+	if errJSON != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		log.Error("[handlers.InfoContainer] Error while marshalling the terminal: ", errJson)
+		log.Error("[handlers.InfoContainer] Error while marshalling the terminal: ", errJSON)
 		return
 	}
 
 	writer.Header().Add("Content-Type", "application/json")
 	writer.Write(jsonTerminal)
-	return
 }
 
 // This handler will return the list of valid images, and the commands that are valid for each images
@@ -268,7 +266,7 @@ func GetImages(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 		return
 	}
-	if request.Method == http.MethodGet {
+	if request.Method != http.MethodGet {
 		writer.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
@@ -282,15 +280,14 @@ func GetImages(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	// Convert to json
-	jsonImages, errJson := json.Marshal(imagesDB)
-	if errJson != nil {
+	jsonImages, errJSON := json.Marshal(imagesDB)
+	if errJSON != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		log.Error("[handlers.GetImages] Error while marshalling the images: ", errJson)
+		log.Error("[handlers.GetImages] Error while marshalling the images: ", errJSON)
 		return
 	}
 	writer.Header().Add("Content-Type", "application/json")
 	writer.Write(jsonImages)
-	return
 }
 
 func HandleFullStop(writer http.ResponseWriter, request *http.Request) {
@@ -319,7 +316,6 @@ func HandleFullStop(writer http.ResponseWriter, request *http.Request) {
 		log.Error("[handlers.HandleFullStop] Error while stopping all containers: ", err)
 		return
 	}
-	return
 }
 
 // This handler will resize the tty of container with the given id
@@ -379,9 +375,9 @@ func isAllowed(container models.Container) bool {
 }
 
 func isRunning(containerID string, client *client.Client) bool {
-	containerJson, errClient := client.ContainerInspect(context.Background(), containerID)
+	containerJSON, errClient := client.ContainerInspect(context.Background(), containerID)
 	if errClient != nil {
 		return false
 	}
-	return containerJson.State.Running
+	return containerJSON.State.Running
 }
