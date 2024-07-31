@@ -146,7 +146,8 @@ func DeleteContainer(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	// Get the container ID from the URL
-	containerID := strings.TrimPrefix(request.URL.Path, "/container/")
+	containerID := request.PathValue("containerID")
+	log.Info("Deleting container", "containerID", containerID)
 
 	// Delete the container
 	success, err := models.DeleteContainerDB(containerID, email)
@@ -171,13 +172,6 @@ func DeleteContainer(writer http.ResponseWriter, request *http.Request) {
 // - 405: Method Not Allowed
 // - 500: Internal Server Error
 func ListContainers(writer http.ResponseWriter, request *http.Request) {
-	// Check if the method is GET
-	if request.Method != http.MethodGet {
-		writer.Header().Add("Allow", http.MethodGet)
-		writer.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
 	log.Debug("[handlers.ListContainers] Request received")
 
 	user, errAuth := models.Middleware(request)
