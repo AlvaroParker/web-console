@@ -8,9 +8,9 @@ import (
 
 var DB *sql.DB
 
-func InitDB(dbUrl string) error {
+func InitDB(dbURL string) error {
 	var err error
-	DB, err = sql.Open("postgres", dbUrl)
+	DB, err = sql.Open("postgres", dbURL)
 	if err != nil {
 		return err
 	}

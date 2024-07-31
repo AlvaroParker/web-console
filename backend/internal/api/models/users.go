@@ -11,7 +11,7 @@ import (
 )
 
 type Session struct {
-	Id        int    `json:"id"`
+	ID        int    `json:"id"`
 	SessionID string `json:"sessionid"`
 	Email     string `json:"email"`
 }
@@ -57,7 +57,7 @@ func CheckValidSession(sessionID string) (*Session, error) {
 	query := database.DB.QueryRow("SELECT * FROM sessions WHERE sessionid = $1", sessionID)
 
 	var session Session
-	errScan := query.Scan(&session.Id, &session.SessionID, &session.Email)
+	errScan := query.Scan(&session.ID, &session.SessionID, &session.Email)
 
 	if errScan != nil {
 		return nil, errScan
@@ -132,21 +132,21 @@ func DeleteSession(sessionCookie string) error {
 	return nil
 }
 
-func GetUserInfoDb(email string) (*UserRes, error) {
+func GetUserInfoDB(email string) (*UserRes, error) {
 	var user UserRes
 	row := database.DB.QueryRow("SELECT name, lastname,email FROM users WHERE email = $1", email)
-	if errDb := row.Scan(&user.Name, &user.Lastname, &user.Email); errDb != nil {
-		return nil, errDb
+	if errDB := row.Scan(&user.Name, &user.Lastname, &user.Email); errDB != nil {
+		return nil, errDB
 	}
-	count, errDb := CountContainers(email)
-	if errDb != nil {
-		return nil, errDb
+	count, errDB := CountContainers(email)
+	if errDB != nil {
+		return nil, errDB
 	}
 	user.ActiveContainers = count
 
-	runningContainers, errDbRunning := GetRunningContainers(email)
-	if errDbRunning != nil {
-		return nil, errDbRunning
+	runningContainers, errDBRunning := GetRunningContainers(email)
+	if errDBRunning != nil {
+		return nil, errDBRunning
 	}
 	user.RunningContainers = runningContainers
 	return &user, nil

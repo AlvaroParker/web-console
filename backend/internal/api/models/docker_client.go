@@ -61,7 +61,7 @@ func NewWebContainer(containerConf Container, id *string) (*WebContainer, error)
 	}
 	// Check if containerConf has empty values or non set
 	if containerConf.Image == "" || containerConf.Tag == "" || containerConf.Command == nil {
-		return nil, errors.New("Empty values in containerConf")
+		return nil, errors.New("empty values in containerConf")
 	}
 
 	return &WebContainer{
@@ -84,14 +84,14 @@ func (wc *WebContainer) Start(doexec bool) error {
 		wc.client.ContainerStart(wc.context, *wc.id, container.StartOptions{})
 
 		if doexec {
-			id_response, errExecCreate := wc.client.ContainerExecCreate(wc.context, *wc.id, types.ExecConfig{
+			idResponse, errExecCreate := wc.client.ContainerExecCreate(wc.context, *wc.id, types.ExecConfig{
 				Cmd: []string{wc.Command},
 			})
 			if errExecCreate != nil {
 				return errExecCreate
 			}
 
-			errExecStart := wc.client.ContainerExecStart(wc.context, id_response.ID, types.ExecStartCheck{})
+			errExecStart := wc.client.ContainerExecStart(wc.context, idResponse.ID, types.ExecStartCheck{})
 			if errExecStart != nil {
 				return errExecStart
 			}
@@ -148,11 +148,11 @@ func (wc *WebContainer) Create() (*string, error) {
 		containerName = ""
 	}
 
-	container_res, err := wc.client.ContainerCreate(wc.context, &containerConfig, &hostConfig, nil, nil, containerName)
+	containerRes, err := wc.client.ContainerCreate(wc.context, &containerConfig, &hostConfig, nil, nil, containerName)
 	if err != nil {
 		return nil, err
 	}
-	wc.id = &container_res.ID
+	wc.id = &containerRes.ID
 
 	return wc.id, nil
 }
@@ -178,8 +178,8 @@ func (wc *WebContainer) AttachContainer(resize bool, wsConn *websocket.Conn, log
 	if errAttach != nil {
 		return errAttach
 	}
-	go handle_input(resp.Conn, wsConn)
-	go handle_output(resp.Conn, wsConn)
+	go handleInput(resp.Conn, wsConn)
+	go handleOutput(resp.Conn, wsConn)
 
 	statusCh, errWait := wc.client.ContainerWait(wc.context, *wc.id, container.WaitConditionNotRunning)
 	select {
@@ -199,7 +199,7 @@ func (wc *WebContainer) Close() {
 	}
 }
 
-func handle_input(conn net.Conn, wsConn *websocket.Conn) {
+func handleInput(conn net.Conn, wsConn *websocket.Conn) {
 	for {
 		_, message, err := wsConn.ReadMessage()
 		if err != nil {
@@ -209,14 +209,14 @@ func handle_input(conn net.Conn, wsConn *websocket.Conn) {
 	}
 }
 
-func handle_output(conn net.Conn, wsOut *websocket.Conn) {
+func handleOutput(conn net.Conn, wsOut *websocket.Conn) {
 	for {
 		buf := make([]byte, 1024)
 		n, err := conn.Read(buf)
 		if err != nil {
 			return
 		}
-		str_encode := base64.StdEncoding.EncodeToString(buf[:n])
-		wsOut.WriteMessage(websocket.TextMessage, []byte(str_encode))
+		strEncode := base64.StdEncoding.EncodeToString(buf[:n])
+		wsOut.WriteMessage(websocket.TextMessage, []byte(strEncode))
 	}
 }

@@ -143,7 +143,7 @@ func UserInfo(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	userDB, errUser := models.GetUserInfoDb(user)
+	userDB, errUser := models.GetUserInfoDB(user)
 	if errUser != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return

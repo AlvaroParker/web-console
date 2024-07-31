@@ -11,7 +11,7 @@ import (
 )
 
 type Terminal struct {
-	Id             int    `json:"id"`
+	ID             int    `json:"id"`
 	ContainerID    string `json:"containerid"`
 	Email          string `json:"email"`
 	Image          string `json:"image"`
@@ -40,7 +40,7 @@ type Container struct {
 }
 
 type ImagesDB struct {
-	Id       int      `json:"id"`
+	ID       int      `json:"id"`
 	ImageTag string   `json:"image_tag"`
 	Commands []string `json:"commands"`
 }
@@ -58,9 +58,9 @@ func ValidateContainer(email string, hash string) *Container {
 }
 
 func GetTerminals(email string) ([]TerminalRes, error) {
-	rowsDB, errorDb := database.DB.Query("SELECT containerid, image,tag, name FROM terminals WHERE email = $1", email)
-	if errorDb != nil {
-		return nil, errorDb
+	rowsDB, errorDB := database.DB.Query("SELECT containerid, image,tag, name FROM terminals WHERE email = $1", email)
+	if errorDB != nil {
+		return nil, errorDB
 	}
 	// Convert the rows to a list of `Terminal`
 	// var terminals []Terminal
@@ -130,24 +130,24 @@ func CountContainers(email string) (int, error) {
 func GetContainerInfo(id string, email string) (*TerminalRes, error) {
 	query := database.DB.QueryRow("SELECT containerid, image, tag, name FROM terminals WHERE containerid = $1 and email = $2", id, email)
 	var terminal TerminalRes
-	errDb := query.Scan(&terminal.ContainerID, &terminal.Image, &terminal.Tag, &terminal.Name)
-	if errDb != nil {
-		return nil, errDb
+	errDB := query.Scan(&terminal.ContainerID, &terminal.Image, &terminal.Tag, &terminal.Name)
+	if errDB != nil {
+		return nil, errDB
 	}
 
 	return &terminal, nil
 }
 
 func GetValidImages() ([]ImagesDB, error) {
-	rowsDB, errorDb := database.DB.Query("SELECT id, image_tag, commands FROM images")
-	if errorDb != nil {
-		return nil, errorDb
+	rowsDB, errorDB := database.DB.Query("SELECT id, image_tag, commands FROM images")
+	if errorDB != nil {
+		return nil, errorDB
 	}
 	// Convert the rows to a list of `Terminal`
 	var images []ImagesDB
 	for rowsDB.Next() {
 		var image ImagesDB
-		if errScan := rowsDB.Scan(&image.Id, &image.ImageTag, (*pq.StringArray)(&image.Commands)); errScan != nil {
+		if errScan := rowsDB.Scan(&image.ID, &image.ImageTag, (*pq.StringArray)(&image.Commands)); errScan != nil {
 			return nil, errScan
 		}
 
@@ -158,9 +158,9 @@ func GetValidImages() ([]ImagesDB, error) {
 }
 
 func GetRunningContainers(email string) ([]TerminalRes, error) {
-	containers, errorDb := GetTerminals(email)
-	if errorDb != nil {
-		return nil, errorDb
+	containers, errorDB := GetTerminals(email)
+	if errorDB != nil {
+		return nil, errorDB
 	}
 	var runningContainers []TerminalRes
 	client, clientErr := client.NewClientWithOpts(client.FromEnv)
@@ -176,11 +176,11 @@ func GetRunningContainers(email string) ([]TerminalRes, error) {
 }
 
 func isRunning(containerID string, client *client.Client) bool {
-	containerJson, errClient := client.ContainerInspect(context.Background(), containerID)
+	containerJSON, errClient := client.ContainerInspect(context.Background(), containerID)
 	if errClient != nil {
 		return false
 	}
-	return containerJson.State.Running
+	return containerJSON.State.Running
 }
 
 func ContainerResize(height uint, width uint, id string) error {
@@ -201,9 +201,9 @@ func ContainerResize(height uint, width uint, id string) error {
 }
 
 func FullStop(email string) error {
-	rowsDB, errorDb := database.DB.Query("SELECT containerid FROM terminals WHERE email = $1", email)
-	if errorDb != nil {
-		return errorDb
+	rowsDB, errorDB := database.DB.Query("SELECT containerid FROM terminals WHERE email = $1", email)
+	if errorDB != nil {
+		return errorDB
 	}
 
 	cli, err := client.NewClientWithOpts(client.FromEnv)
