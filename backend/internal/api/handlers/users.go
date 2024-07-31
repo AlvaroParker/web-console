@@ -7,7 +7,6 @@ import (
 
 	"github.com/AlvaroParker/web-console/internal/api/models"
 	"github.com/charmbracelet/log"
-
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -17,18 +16,6 @@ func comparePassword(hashedPassword string, password string) bool {
 }
 
 func LoginHandler(writer http.ResponseWriter, request *http.Request) {
-	// CORS
-	models.CorsHeaders(writer, request)
-	if request.Method == http.MethodOptions {
-		writer.Header().Set("Access-Control-Allow-Methods", "POST")
-		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		writer.WriteHeader(http.StatusOK)
-		return
-	}
-	if request.Method != http.MethodPost {
-		writer.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
 	var user models.UserLogin
 	err := json.NewDecoder(request.Body).Decode(&user)
 	if err != nil {
@@ -65,17 +52,6 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 var bcryptCost = 10
 
 func CreateAccount(writer http.ResponseWriter, request *http.Request) {
-	models.CorsHeaders(writer, request)
-	if request.Method == http.MethodOptions {
-		writer.Header().Set("Access-Control-Allow-Methods", "POST")
-		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		writer.WriteHeader(http.StatusOK)
-		return
-	}
-	if request.Method != http.MethodPost {
-		writer.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
 	var user models.User
 
 	errJSON := json.NewDecoder(request.Body).Decode(&user)
@@ -95,19 +71,6 @@ func CreateAccount(writer http.ResponseWriter, request *http.Request) {
 }
 
 func LogoutHandler(writer http.ResponseWriter, request *http.Request) {
-	models.CorsHeaders(writer, request)
-	if request.Method == http.MethodOptions {
-		writer.Header().Set("Access-Control-Allow-Methods", "POST")
-		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		writer.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if request.Method != http.MethodPost {
-		writer.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
 	cookie, err := request.Cookie("session")
 	if err != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -124,20 +87,6 @@ func LogoutHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func UserInfo(writer http.ResponseWriter, request *http.Request) {
-	models.CorsHeaders(writer, request)
-	if request.Method == http.MethodOptions {
-		writer.Header().Set("Access-Control-Allow-Methods", "GET")
-		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		writer.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if request.Method != http.MethodGet {
-		log.Info("Method not allowed")
-		writer.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
 	user, errAuth := models.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -159,19 +108,6 @@ func UserInfo(writer http.ResponseWriter, request *http.Request) {
 }
 
 func ChangePassword(writer http.ResponseWriter, request *http.Request) {
-	models.CorsHeaders(writer, request)
-	if request.Method == http.MethodOptions {
-		writer.Header().Set("Access-Control-Allow-Methods", "GET")
-		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		writer.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if request.Method != http.MethodPost {
-		writer.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
 	user, errAuth := models.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -201,19 +137,6 @@ func ChangePassword(writer http.ResponseWriter, request *http.Request) {
 }
 
 func CloseSessions(writer http.ResponseWriter, request *http.Request) {
-	models.CorsHeaders(writer, request)
-	if request.Method == http.MethodOptions {
-		writer.Header().Set("Access-Control-Allow-Methods", "POST")
-		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		writer.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if request.Method != http.MethodGet {
-		writer.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
 	user, errAuth := models.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -230,13 +153,6 @@ func CloseSessions(writer http.ResponseWriter, request *http.Request) {
 }
 
 func AuthUser(writer http.ResponseWriter, request *http.Request) {
-	models.CorsHeaders(writer, request)
-	if request.Method == http.MethodOptions {
-		writer.Header().Set("Access-Control-Allow-Methods", "POST")
-		writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		writer.WriteHeader(http.StatusOK)
-		return
-	}
 	_, err := models.Middleware(request)
 	if err != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
