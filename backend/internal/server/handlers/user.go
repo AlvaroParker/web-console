@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/AlvaroParker/web-console/internal/api/models"
+	"github.com/AlvaroParker/box-code/internal/database"
 	"github.com/charmbracelet/log"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -16,14 +16,14 @@ func comparePassword(hashedPassword string, password string) bool {
 }
 
 func LoginHandler(writer http.ResponseWriter, request *http.Request) {
-	var user models.UserLogin
+	var user database.UserLogin
 	err := json.NewDecoder(request.Body).Decode(&user)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	DBUser, errUser := models.SearchUser(user.Email)
+	DBUser, errUser := database.SearchUser(user.Email)
 	switch errUser {
 	case sql.ErrNoRows:
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -37,7 +37,7 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 
 	matchPassword := comparePassword(DBUser.Password, user.Password)
 	if matchPassword {
-		cookieVal, errCook := models.GenerateCookie(user.Email)
+		cookieVal, errCook := database.GenerateCookie(user.Email)
 		if errCook != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			return
@@ -52,7 +52,7 @@ func LoginHandler(writer http.ResponseWriter, request *http.Request) {
 var bcryptCost = 10
 
 func CreateAccount(writer http.ResponseWriter, request *http.Request) {
-	var user models.User
+	var user database.User
 
 	errJSON := json.NewDecoder(request.Body).Decode(&user)
 	if errJSON != nil {
@@ -66,7 +66,7 @@ func CreateAccount(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	httpRes := models.CreateUser(user, string(hashedPassword))
+	httpRes := database.CreateUser(user, string(hashedPassword))
 	writer.WriteHeader(httpRes)
 }
 
@@ -76,23 +76,23 @@ func LogoutHandler(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	if models.DeleteSession(cookie.Value) != nil {
+	if database.DeleteSession(cookie.Value) != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	cookie.Expires = models.ExpireCookie()
+	cookie.Expires = database.ExpireCookie()
 	http.SetCookie(writer, cookie)
 	writer.WriteHeader(http.StatusOK)
 }
 
 func UserInfo(writer http.ResponseWriter, request *http.Request) {
-	user, errAuth := models.Middleware(request)
+	user, errAuth := database.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	userDB, errUser := models.GetUserInfoDB(user)
+	userDB, errUser := database.GetUserInfoDB(user)
 	if errUser != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
@@ -108,14 +108,14 @@ func UserInfo(writer http.ResponseWriter, request *http.Request) {
 }
 
 func ChangePassword(writer http.ResponseWriter, request *http.Request) {
-	user, errAuth := models.Middleware(request)
+	user, errAuth := database.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	// Extract password from the request
-	var pass models.PasswordReq
+	var pass database.PasswordReq
 	jsonErr := json.NewDecoder(request.Body).Decode(&pass)
 	log.Info(pass)
 	if jsonErr != nil || pass.Password == "" {
@@ -129,7 +129,7 @@ func ChangePassword(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	dbErr := models.UpdatePassword(user, string(hashedPassword))
+	dbErr := database.UpdatePassword(user, string(hashedPassword))
 	if dbErr != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
@@ -137,13 +137,13 @@ func ChangePassword(writer http.ResponseWriter, request *http.Request) {
 }
 
 func CloseSessions(writer http.ResponseWriter, request *http.Request) {
-	user, errAuth := models.Middleware(request)
+	user, errAuth := database.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	err := models.CloseAllSessions(user)
+	err := database.CloseAllSessions(user)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
@@ -153,7 +153,7 @@ func CloseSessions(writer http.ResponseWriter, request *http.Request) {
 }
 
 func AuthUser(writer http.ResponseWriter, request *http.Request) {
-	_, err := models.Middleware(request)
+	_, err := database.Middleware(request)
 	if err != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return

@@ -1,12 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"strconv"
 
-	"github.com/AlvaroParker/web-console/internal/api/models"
+	"github.com/AlvaroParker/box-code/internal/database"
 	"github.com/charmbracelet/log"
 	"github.com/gorilla/websocket"
 )
@@ -19,11 +20,12 @@ var upgrader = websocket.Upgrader{}
 // a container to it.
 func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 	log.Debug("[handlers.ConsoleHandler] Request received")
-	email, errAuth := models.Middleware(request)
+	email, errAuth := database.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+	ctx := context.Background()
 
 	hash := request.URL.Query().Get("hash")
 	rawWidth := request.URL.Query().Get("width")
@@ -37,20 +39,15 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	container := models.ValidateContainer(email, hash)
-	if container == nil {
-		writer.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	// Create a new WebContainer
-	webContainer, errorNewWC := models.NewWebContainer(*container, &hash)
+	// Get the container owned by the given email with the given hash
+	wc, err := database.GetContainer(email, hash)
 	// Check if there was an error while creating the new WebContainer
-	if errorNewWC != nil {
+	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		log.Error("[handlers.ConsoleHandler] Error while creating the WebContainer: ", errorNewWC)
+		log.Error("[handlers.ConsoleHandler] Error while creating the WebContainer", "error", err)
 		return
 	}
-	errorCreate := webContainer.Start(true)
+	errorCreate := wc.Start(ctx)
 	if errorCreate != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		log.Error("[handlers.ConsoleHandler] Error while starting the container: ", errorCreate)
@@ -69,13 +66,13 @@ func ConsoleHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	wsConn.SetCloseHandler(func(code int, text string) error {
-		go webContainer.Close()
+		go wc.Close(ctx)
 		fmt.Println("Connection to client closed with code ", code)
 		return nil
 	})
 
 	defer wsConn.Close()
 	fmt.Println("Connection upgraded, attaching container...")
-	webContainer.AttachContainer(true, wsConn, logsBool, width, height)
-	defer webContainer.Close()
+	wc.AttachContainer(ctx, true, wsConn, logsBool, width, height)
+	defer wc.Close(ctx)
 }
