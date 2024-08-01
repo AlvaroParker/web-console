@@ -19,25 +19,36 @@ This project allows you to interact with a Linux machine running on a remote Doc
 ## How to build (for development)
 
 Run the script to download and install the images used for code editing and the web terminal:
+
 ```
 cd images/
 ./build.sh
 ```
 
 Run docker compose to start the Database and the Frontend
+
 ```
 docker compose up
 ```
 
 Run the Golang backend on your machine, since it needs to connect to the Docker socket of you machine
+
 ```
 go run cmd/api/main.go
 ```
 
 If you want to make changes to the backend while also running it, you should execute it using `gowatch` instead:
+
 ```
 gowatch -p cmd/api/main.go
 ```
 
 ## How to build (for production)
+
 Todo!
+
+## Roadmap
+
+- Implementing streaming on code running feature. This means that the output of the program will be streamed instead of waiting for the program to end and then send the output on the server
+- Implement markdowns to see tasks, tests, notes, etc while code editing
+- Implement live code editing and saving files on the server
