@@ -7,7 +7,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/AlvaroParker/box-code/internal/database"
+	"github.com/AlvaroParker/web-console/internal/database"
 	"github.com/charmbracelet/log"
 	"github.com/gorilla/websocket"
 )

@@ -1,4 +1,4 @@
-module github.com/AlvaroParker/box-code
+module github.com/AlvaroParker/web-console
 
 go 1.22.5
 

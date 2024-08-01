@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/AlvaroParker/box-code/internal/driver"
+	"github.com/AlvaroParker/web-console/internal/driver"
 	"github.com/charmbracelet/log"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"

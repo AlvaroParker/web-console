@@ -5,9 +5,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/AlvaroParker/box-code/internal/database"
-	"github.com/AlvaroParker/box-code/internal/driver"
-	"github.com/AlvaroParker/box-code/internal/server/handlers"
+	"github.com/AlvaroParker/web-console/internal/database"
+	"github.com/AlvaroParker/web-console/internal/driver"
+	"github.com/AlvaroParker/web-console/internal/server/handlers"
 	"github.com/charmbracelet/log"
 	"github.com/joho/godotenv"
 )

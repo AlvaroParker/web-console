@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/AlvaroParker/box-code/internal/server"
+	"github.com/AlvaroParker/web-console/internal/server"
 	"github.com/charmbracelet/log"
 )
 

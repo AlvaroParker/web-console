@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/AlvaroParker/box-code/internal/database"
-	"github.com/AlvaroParker/box-code/internal/driver"
+	"github.com/AlvaroParker/web-console/internal/database"
+	"github.com/AlvaroParker/web-console/internal/driver"
 	"github.com/charmbracelet/log"
 	"github.com/docker/docker/errdefs"
 )
