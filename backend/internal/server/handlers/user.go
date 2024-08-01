@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/AlvaroParker/box-code/internal/database"
+	"github.com/AlvaroParker/web-console/internal/database"
 	"github.com/charmbracelet/log"
 	"golang.org/x/crypto/bcrypt"
 )
