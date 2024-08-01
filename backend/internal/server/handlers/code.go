@@ -1,26 +1,24 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
-	"github.com/AlvaroParker/web-console/internal/api/models"
+	"github.com/AlvaroParker/box-code/internal/database"
+	"github.com/AlvaroParker/box-code/internal/driver"
 	"github.com/charmbracelet/log"
 )
 
 func PostCodeHandler(writer http.ResponseWriter, request *http.Request) {
-	if request.Method != http.MethodPost {
-		writer.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
-	_, errAuth := models.Middleware(request)
+	_, errAuth := database.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+	ctx := context.Background()
 
-	var codeReq models.CodeReq
+	var codeReq driver.CodeReq
 	jsonErr := json.NewDecoder(request.Body).Decode(&codeReq)
 	if jsonErr != nil {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -32,7 +30,7 @@ func PostCodeHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	output, errExec := models.HandleExecution(&codeReq)
+	output, errExec := driver.HandleExecution(ctx, &codeReq)
 	if errExec != nil {
 		log.Error("[handlers.PostCodeHandler] Error while executing the code: ", errExec)
 		writer.WriteHeader(http.StatusInternalServerError)

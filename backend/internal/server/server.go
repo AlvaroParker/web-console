@@ -5,23 +5,18 @@ import (
 	"os"
 	"time"
 
-	database "github.com/AlvaroParker/web-console/internal/api"
-	"github.com/AlvaroParker/web-console/internal/api/handlers"
+	"github.com/AlvaroParker/box-code/internal/database"
+	"github.com/AlvaroParker/box-code/internal/driver"
+	"github.com/AlvaroParker/box-code/internal/server/handlers"
 	"github.com/charmbracelet/log"
 	"github.com/joho/godotenv"
-
-	_ "github.com/lib/pq"
 )
 
 func CreateServer() *http.Server {
-	errDotenv := godotenv.Load()
-	if errDotenv != nil {
-		panic("Error loading .env file")
+	err := godotenv.Load()
+	if err != nil {
+		log.Error("Error while loading env files", "error", err)
 	}
-
-	dbURL := os.Getenv("DATABASE_URL")
-	log.Debug("Connecting with url ", dbURL)
-	database.InitDB(dbURL)
 
 	s := &http.Server{
 		Addr:           ":8080",
@@ -31,6 +26,14 @@ func CreateServer() *http.Server {
 		MaxHeaderBytes: 1 << 20, // We allow max
 	}
 
+	user := os.Getenv("PG_USER")
+	db_name := os.Getenv("PG_DB")
+	sslmode := os.Getenv("PG_SSLMODE")
+	password := os.Getenv("PG_PASSWORD")
+	database.InitDB(user, db_name, sslmode, password)
+	driver.InitClient()
+
+	// Enable CORS origin any
 	http.HandleFunc("OPTIONS /", enableCors)
 
 	http.Handle("POST /login", middleware(handlers.LoginHandler))
@@ -53,6 +56,7 @@ func CreateServer() *http.Server {
 
 	return s
 }
+
 func enableCors(w http.ResponseWriter, r *http.Request) {
 	log.Info(r)
 	(w).Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))

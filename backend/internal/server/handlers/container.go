@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/AlvaroParker/web-console/internal/api/models"
+	"github.com/AlvaroParker/box-code/internal/database"
+	"github.com/AlvaroParker/box-code/internal/driver"
 	"github.com/charmbracelet/log"
-	"github.com/docker/docker/client"
 	"github.com/docker/docker/errdefs"
 )
 
@@ -23,21 +23,16 @@ const LimitContainers = 8
 // - 403: Forbidden
 // - 400: Bad Request
 func NewContainer(writer http.ResponseWriter, request *http.Request) {
-	if request.Method != http.MethodPost {
-		writer.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
-	email, errAuth := models.Middleware(request)
+	email, errAuth := database.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	// Check the number of containers
-	count, err := models.CountContainers(email)
+	count, err := database.CountContainers(email)
 	if err != nil {
-		log.Error("[handlers.NewContainer] Error while counting the number of containers: ", err)
+		log.Error("[handlers.NewContainer] While counting the number of containers", "error", err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -47,9 +42,9 @@ func NewContainer(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	var container models.Container
+	var container database.Container
 	if errJSON := json.NewDecoder(request.Body).Decode(&container) != nil; errJSON {
-		log.Warn("[handlers.NewContainer] Error while decoding the request body: ", errJSON)
+		log.Warn("[handlers.NewContainer] While decoding the request body: ", "error", errJSON)
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -66,14 +61,16 @@ func NewContainer(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	webContainer, errWc := models.NewWebContainer(container, nil)
+	// Generate a driver for the new container
+	webContainer, errWc := container.GenerateWebContainer(nil)
 	if errWc != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		log.Error("[handlers.NewContainer] Error while creating the WebContainer: ", errWc)
+		log.Error("[handlers.NewContainer] While creating the WebContainer driver", "error", errWc)
 		return
 	}
 
-	containerID, errCreate := webContainer.Create()
+	// Create the new container on docker a retrieve his id
+	containerID, errCreate := webContainer.Create(context.Background())
 	if errCreate != nil {
 		// Check if the error was that the name is already taken
 		if errdefs.IsConflict(errCreate) {
@@ -85,17 +82,17 @@ func NewContainer(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 		writer.WriteHeader(http.StatusInternalServerError)
-		log.Error("[handlers.NewContainer] Error while creating the container: ", errCreate)
+		log.Error("[handlers.NewContainer] While creating the container", "error", errCreate)
 		return
 	}
 
 	// Return the container ID
-	if err := models.AddContainerDB(email, *containerID, container); err != nil {
-		log.Error("[handlers.NewContainer] Error while adding the container to the database: ", err)
+	if err := database.AddContainerDB(email, *containerID, container); err != nil {
+		log.Error("[handlers.NewContainer] While adding the container to the database", "error", err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	log.Info("[handlers.NewContainer] Container created with ID: ", *containerID)
+	log.Info("[handlers.NewContainer] Container created", "ID", *containerID)
 	writer.WriteHeader(http.StatusCreated)
 }
 
@@ -107,7 +104,7 @@ func NewContainer(writer http.ResponseWriter, request *http.Request) {
 // - 500: Internal Server Error
 func DeleteContainer(writer http.ResponseWriter, request *http.Request) {
 	log.Debug("[handlers.DeleteContainer] Request received")
-	email, errAuth := models.Middleware(request)
+	email, errAuth := database.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
@@ -116,10 +113,10 @@ func DeleteContainer(writer http.ResponseWriter, request *http.Request) {
 	containerID := request.PathValue("containerID")
 	log.Info("Deleting container", "containerID", containerID)
 
-	// Delete the container
-	success, err := models.DeleteContainerDB(containerID, email)
+	// Delete the container object on the database, this will trigger the actual container to delete as well
+	success, err := database.DeleteContainerDB(containerID, email)
 	if err != nil {
-		log.Error("[handlers.DeleteContainer] Error while deleting the container: ", err)
+		log.Error("[handlers.DeleteContainer] While deleting  the container", "error", err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -141,25 +138,25 @@ func DeleteContainer(writer http.ResponseWriter, request *http.Request) {
 func ListContainers(writer http.ResponseWriter, request *http.Request) {
 	log.Debug("[handlers.ListContainers] Request received")
 
-	user, errAuth := models.Middleware(request)
+	user, errAuth := database.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	// rowsDB
-	terminals, errDB := models.GetTerminals(user)
+	// Get a list of containers metadata that the user owns
+	meta, errDB := database.GetContainersMeta(user)
 	if errDB != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		log.Error("[handlers.ListContainers] Error while querying the database: ", errDB)
 		return
 	}
-	if len(terminals) == 0 {
+	if len(meta) == 0 {
 		writer.WriteHeader(http.StatusNoContent)
 		return
 	}
-	// Convert the list of `Terminal` to JSON
-	jsonTerminals, errJSON := json.Marshal(terminals)
+	// Convert the list of `ContainerMeta` to JSON
+	jsonTerminals, errJSON := json.Marshal(meta)
 	if errJSON != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		log.Error("[handlers.ListContainers] Error while marshalling the terminals: ", errJSON)
@@ -173,7 +170,7 @@ func ListContainers(writer http.ResponseWriter, request *http.Request) {
 func InfoContainer(writer http.ResponseWriter, request *http.Request) {
 	log.Debug("[handlers.InfoContainer] Request received")
 
-	email, errAuth := models.Middleware(request)
+	email, errAuth := database.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
@@ -186,8 +183,8 @@ func InfoContainer(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	// Get container info
-	containerInfo, errGetContainerInfo := models.GetContainerInfo(id, email)
+	// Get container info (metadata)
+	containerInfo, errGetContainerInfo := database.GetContainerInfo(id, email)
 	if errGetContainerInfo != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		log.Error("[handlers.InfoContainer] Error while getting container info: ", errGetContainerInfo)
@@ -210,7 +207,7 @@ func InfoContainer(writer http.ResponseWriter, request *http.Request) {
 func GetImages(writer http.ResponseWriter, request *http.Request) {
 	log.Debug("[handlers.GetImages] Request received")
 
-	imagesDB, err := models.GetValidImages()
+	imagesDB, err := database.GetValidImages()
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		log.Error("[handlers.GetImages] Error while getting images from the database: ", err)
@@ -227,19 +224,23 @@ func GetImages(writer http.ResponseWriter, request *http.Request) {
 	writer.Write(jsonImages)
 }
 
+// Stops every container for the user
 func HandleFullStop(writer http.ResponseWriter, request *http.Request) {
 	log.Debug("[handlers.HandleFullStop] Request received")
 
-	email, errAuth := models.Middleware(request)
+	email, errAuth := database.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	err := models.FullStop(email)
+	ids, err := database.GetContainersId(email)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		log.Error("[handlers.HandleFullStop] Error while stopping all containers: ", err)
 		return
+	}
+	for _, id := range ids {
+		go driver.DeleteContainer(context.Background(), id)
 	}
 }
 
@@ -247,7 +248,7 @@ func HandleFullStop(writer http.ResponseWriter, request *http.Request) {
 func HandleResize(writer http.ResponseWriter, request *http.Request) {
 	log.Debug("[handlers.HandleResize] Request received")
 
-	_, errAuth := models.Middleware(request)
+	_, errAuth := database.Middleware(request)
 	if errAuth != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
@@ -262,7 +263,7 @@ func HandleResize(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	if err := models.ContainerResize(uint(height), uint(width), id); err != nil {
+	if err := driver.ContainerResize(uint(height), uint(width), id); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		log.Error("[handlers.HandleResize] Error while resizing the container: ", err)
 		return
@@ -270,8 +271,8 @@ func HandleResize(writer http.ResponseWriter, request *http.Request) {
 }
 
 // Check if the image provided is valid to create a new container
-func isAllowed(container models.Container) bool {
-	validImages, errDB := models.GetValidImages()
+func isAllowed(container database.Container) bool {
+	validImages, errDB := database.GetValidImages()
 	if errDB != nil {
 		log.Error("[handlers.isAllowed] Error while getting valid images: ", errDB)
 		return false
@@ -285,12 +286,4 @@ func isAllowed(container models.Container) bool {
 		}
 	}
 	return false
-}
-
-func isRunning(containerID string, client *client.Client) bool {
-	containerJSON, errClient := client.ContainerInspect(context.Background(), containerID)
-	if errClient != nil {
-		return false
-	}
-	return containerJSON.State.Running
 }
