@@ -1,22 +1,28 @@
-@import './fonts/InterV/inter.css';
+@import "./fonts/InterV/inter.css";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @font-face {
-  font-family: 'JetBrains Mono';
-  src: local('JetBrains Mono'), url('./fonts/JetBrainsMonoNerdFont-Regular.ttf') format('truetype');
+    font-family: "JetBrains Mono";
+    src:
+        local("JetBrains Mono"),
+        url("./fonts/JetBrainsMonoNerdFont-Regular.ttf") format("truetype");
 }
 
-html, body {
+html,
+body {
     height: 100%;
     margin: 0;
-    font: 16px 'Inter', sans-serif;
+    font:
+        16px "Inter",
+        sans-serif;
 }
 #terminal-wrapper {
-    font-family: 'JetBrains Mono'!important;
+    font-family: "JetBrains Mono" !important;
 }
-#root {  /* Assuming #root is your app's root element */
+#root {
+    /* Assuming #root is your app's root element */
     height: 100%;
 }
