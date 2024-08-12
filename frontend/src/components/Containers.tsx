@@ -2,13 +2,12 @@ import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import {
-  ContainerRes,
+  ContainerInfo,
   DeleteContainer,
-  DeleteContainerRes,
   ListContainers,
-  ListContainersRes,
 } from "../services/container";
 import { capitalize } from "./util";
+import { ServiceError } from "../services/error";
 
 // Todo: Rerender component on delete
 export function ContainersComponent() {
@@ -19,7 +18,7 @@ export function ContainersComponent() {
     ["alpine:3.14", "https://cdn.svgporn.com/logos/linux-tux.svg"],
     ["archlinux:base-devel", "https://cdn.svgporn.com/logos/archlinux.svg"],
   ]);
-  const [containers, setContainers] = React.useState<ContainerRes[] | null>(
+  const [containers, setContainers] = React.useState<ContainerInfo[] | null>(
     null
   );
   const navigate = useNavigate();
@@ -30,24 +29,20 @@ export function ContainersComponent() {
 
   const updateContainers = () => {
     ListContainers().then((res) => {
-      const [containers, response] = res;
-      switch (response) {
-        case ListContainersRes.OK:
-          setContainers(containers);
-          break;
-        case ListContainersRes.NO_CONTENT:
-          console.log("No content");
-          // No containers, do nothing
-          break;
-        case ListContainersRes.UNAUTHORIZED:
-          navigate("/login");
-          break;
-        case ListContainersRes.INTERNAL_SERVER_ERROR:
-          // TODO
-          break;
-        case ListContainersRes.UNKNOWN:
-          // TODO
-          break;
+      if (res.type === "Ok") {
+        setContainers(res.value)
+      } else if (res.type === "Err") {
+        switch (res.error) {
+          case ServiceError.Unauthorized:
+            navigate("/login");
+            break;
+          case ServiceError.InternalServerError:
+            // TODO
+            break;
+          default:
+            // TODO
+            break;
+        }
       }
     });
   };
@@ -69,19 +64,17 @@ export function ContainersComponent() {
   const deleteContainer = (e: React.MouseEvent) => {
     e.preventDefault();
     DeleteContainer(toDelete).then((res) => {
-      switch (res) {
-        case DeleteContainerRes.OK:
-          setUpdated(!updated);
-          break;
-        case DeleteContainerRes.UNAUTHORIZED:
-          navigate("/login");
-          break;
-        case DeleteContainerRes.NOT_FOUND:
-          // TODO
-          break;
-        case DeleteContainerRes.INTERNAL_SERVER_ERROR:
-          // TODO
-          break;
+      if (res.type === "Ok") {
+        setUpdated(!updated);
+      } else if (res.type === "Err") {
+        switch (res.error) {
+          case ServiceError.Unauthorized:
+            navigate("/login");
+            break;
+          default:
+            break
+
+        }
       }
     });
     setShowModal(false);

@@ -4,21 +4,19 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import {
-  ContainerRes,
+  ContainerInfo,
   GetContainerInfo,
-  InfoContainerRes,
   ResizeContainer,
-  ResizeRes,
 } from "../services/container";
 import "./Terminal.css";
 import { LoadTerminal, capitalize, checkAuth } from "./util";
 
 export function TerminalComponent({ wsURL }: { wsURL: string }) {
   const params = useParams();
-  const [endTerminal, _] = useState(false);
+  const [endTerminal] = useState(false);
   const initialized = useRef(false);
   const navigate = useNavigate();
-  const [terminalInfo, setTerminalInfo] = React.useState<ContainerRes | null>(
+  const [terminalInfo, setTerminalInfo] = React.useState<ContainerInfo | null>(
     null
   );
   const didAuth = useRef(false);
@@ -27,9 +25,9 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
 
   useEffect(() => {
     if (params.containerId !== undefined) {
-      GetContainerInfo(params.containerId).then(([response, container]) => {
-        if (response === InfoContainerRes.OK) {
-          setTerminalInfo(container);
+      GetContainerInfo(params.containerId).then((response) => {
+        if (response.type === "Ok") {
+          setTerminalInfo(response.value)
         }
       });
     }
@@ -40,26 +38,14 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
       return;
     }
     ResizeContainer(width, height, params.containerId).then((response) => {
-      switch (response) {
-        case ResizeRes.OK:
-          break;
-        case ResizeRes.NO_CONTENT:
-          console.log("No content");
-          break;
-        case ResizeRes.UNAUTHORIZED:
-          navigate("/login");
-          break;
-        case ResizeRes.INTERNAL_SERVER_ERROR:
-          console.log("Internal server error");
-          break;
-        case ResizeRes.UNKNOWN:
-          console.log("Unknown");
-          break;
+      if (response.type === "Err") {
+        console.log("Error resizing terminal: ", response.error);
+        return;
       }
     });
   }
 
-  var doit = 0;
+  let doit = 0;
   window.onresize = () => {
     if (fitAddon.current) {
       fitAddon.current.fit();
@@ -92,19 +78,19 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
           ws.send("\n");
         });
         ws.addEventListener("message", (event) => {
-          let data = window.atob(event.data);
+          const data = window.atob(event.data);
           term.write(data);
         });
         ws.addEventListener("error", (error) => {
           console.error("WebSocket Error: ", error);
         });
-        ws.addEventListener("close", (_) => {
+        ws.addEventListener("close", () => {
           // setEndTerminal(true)
           // term.dispose()
           navigate("/");
           // try reconnect
         });
-        term.onData((data, _) => {
+        term.onData((data) => {
           ws.send(data);
         });
         termRef.current = term;
@@ -121,7 +107,7 @@ export function TerminalComponent({ wsURL }: { wsURL: string }) {
           {capitalize(terminalInfo.image) + ":" + terminalInfo.tag})
         </div>
       )}
-      {!endTerminal && <div id="terminal" className="h-[75%]"></div>}
+      {!endTerminal && <div id="terminal" className="h-[75%] mx-5"></div>}
       {endTerminal && (
         <div>
           Terminal sessions has ended. Reload the website to spawn new linux

@@ -22,15 +22,11 @@ export function LoginComponent() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    try {
-      const res = await Login(email, password);
-      if (res) {
-        navigate("/");
-      } else {
-        setShowErr(true);
-      }
-    } catch (err) {
-      setShowErr(true);
+    const res = await Login(email, password);
+    if (res.type === "Ok") {
+      navigate("/")
+    } else {
+      setShowErr(true)
     }
   };
 

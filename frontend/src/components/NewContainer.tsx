@@ -4,12 +4,11 @@ import { useNavigate } from "react-router-dom";
 import {
   Container,
   ContainerImageOpt,
-  ContainerImageOptRes,
   CreateContainer,
   GetValidImages,
-  NewContainerRes,
 } from "../services/container";
 import { capitalize, checkAuth } from "./util";
+import { ServiceError } from "../services/error";
 
 export function NewContainer() {
   const didAuth = useRef(false);
@@ -55,17 +54,14 @@ export function NewContainer() {
       checkAuth(navigate);
     }
     document.title = "Web Terminal | New Container";
-    GetValidImages().then(([data, res]) => {
-      switch (res) {
-        case ContainerImageOptRes.OK:
-          if (data) {
-            setImages(data);
-            setCommand(data[0].commands[0]);
-            setImage(data[0]);
-          }
-          break;
-        default:
-          break;
+    GetValidImages().then((response) => {
+      if (response.type === "Ok") {
+        if (response.value) {
+          setImages(response.value);
+          setCommand(response.value[0].commands[0]);
+          setImage(response.value[0]);
+        }
+
       }
     });
   }, []);
@@ -87,22 +83,16 @@ export function NewContainer() {
         network_enabled: networkEnabled,
       };
       const res = await CreateContainer(container);
-      switch (res) {
-        case NewContainerRes.CREATED:
-          navigate("/");
-          break;
-        case NewContainerRes.BAD_REQUEST:
-          alert("Bad request");
-          break;
-        case NewContainerRes.UNAUTHORIZED:
-          navigate("/login");
-          break;
-        case NewContainerRes.FORBIDDEN:
-          // TODO
-          break;
-        default:
-          // TODO
-          break;
+      if (res.type === "Ok") {
+        navigate("/");
+      } else if (res.type === "Err") {
+        switch (res.error) {
+          case ServiceError.Unauthorized:
+            navigate("/login");
+            break;
+          default:
+            break;
+        }
       }
     }
   };

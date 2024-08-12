@@ -1,6 +1,7 @@
 import axios, { isAxiosError } from "axios";
 
 import { API_URL } from "./consts";
+import { Result, ServiceError, fromNumber } from "./error";
 
 axios.defaults.withCredentials = true;
 
@@ -18,254 +19,162 @@ export interface Container {
     network_enabled: boolean;
 }
 
-export interface ContainerRes {
+export interface ContainerInfo {
     containerid: string;
     image: string;
     tag: string;
     name: string;
 }
 
-export enum DeleteContainerRes {
-    OK = 200,
-    UNAUTHORIZED = 401,
-    NOT_FOUND = 404,
-    INTERNAL_SERVER_ERROR = 500,
-    UNKNOWN = 0,
-}
-
-export enum NewContainerRes {
-    CREATED = 201,
-    BAD_REQUEST = 400,
-    UNAUTHORIZED = 401,
-    FORBIDDEN = 403,
-    INTERNAL_SERVER_ERROR = 500,
-    UNKOWN = 0,
-}
-
-export enum ListContainersRes {
-    OK = 200,
-    NO_CONTENT = 204,
-    UNAUTHORIZED = 401,
-    INTERNAL_SERVER_ERROR = 500,
-    UNKNOWN = 0,
-}
-
-export enum InfoContainerRes {
-    OK = 200,
-    NO_CONTENT = 204,
-    UNAUTHORIZED = 401,
-    INTERNAL_SERVER_ERROR = 500,
-    UNKNOWN = 0,
-}
-
 const CreateContainer = async (
     container: Container
-): Promise<NewContainerRes> => {
+): Promise<Result<null, ServiceError>> => {
     try {
         const response = await axios.post(`${API_URL}/container`, container);
         switch (response.status) {
             case 201 || 200:
-                return NewContainerRes.CREATED;
-            case 400:
-                return NewContainerRes.BAD_REQUEST;
-            case 401:
-                return NewContainerRes.UNAUTHORIZED;
-            case 403:
-                return NewContainerRes.FORBIDDEN;
-            case 500:
-                return NewContainerRes.INTERNAL_SERVER_ERROR;
+                return { type: "Ok", value: null };
         }
     } catch (error) {
         if (axios.isAxiosError(error)) {
             console.log(error.message);
-            switch (error.response?.status) {
-                case 400:
-                    return NewContainerRes.BAD_REQUEST;
-                case 401:
-                    return NewContainerRes.UNAUTHORIZED;
-                case 403:
-                    return NewContainerRes.FORBIDDEN;
-                case 500:
-                    return NewContainerRes.INTERNAL_SERVER_ERROR;
-            }
+            return {
+                type: "Err",
+                error: fromNumber(error.response?.status || 0),
+            };
         }
     }
-    return NewContainerRes.UNKOWN;
+    return { type: "Err", error: ServiceError.Unknown };
 };
 
 const ListContainers = async (): Promise<
-    [ContainerRes[] | null, ListContainersRes]
+    Result<ContainerInfo[], ServiceError>
 > => {
     try {
         const response = await axios.get(`${API_URL}/container`);
         switch (response.status) {
             case 200:
-                return [response.data, ListContainersRes.OK];
+                return { type: "Ok", value: response.data };
             case 204:
-                return [null, ListContainersRes.NO_CONTENT];
-            case 401:
-                return [null, ListContainersRes.UNAUTHORIZED];
-            case 500:
-                return [null, ListContainersRes.INTERNAL_SERVER_ERROR];
+                return { type: "Err", error: ServiceError.NoContent };
         }
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            switch (error.response?.status) {
-                case 401:
-                    return [null, ListContainersRes.UNAUTHORIZED];
-                case 500:
-                    return [null, ListContainersRes.INTERNAL_SERVER_ERROR];
-            }
+            return {
+                type: "Err",
+                error: fromNumber(error.response?.status || 0),
+            };
         }
     }
-    return [null, ListContainersRes.UNKNOWN];
+    return { type: "Err", error: ServiceError.Unknown };
 };
 
 const DeleteContainer = async (
     containerId: string
-): Promise<DeleteContainerRes> => {
+): Promise<Result<null, ServiceError>> => {
     try {
         const response = await axios.delete(
             `${API_URL}/container/${containerId}`
         );
-        switch (response.status) {
-            case 200:
-                return DeleteContainerRes.OK;
-            case 401:
-                return DeleteContainerRes.UNAUTHORIZED;
-            case 404:
-                return DeleteContainerRes.NOT_FOUND;
-            case 500:
-                return DeleteContainerRes.INTERNAL_SERVER_ERROR;
-        }
+        if (response.status === 200) return { type: "Ok", value: null };
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            switch (error.status) {
-                case 401:
-                    return DeleteContainerRes.UNAUTHORIZED;
-                case 404:
-                    return DeleteContainerRes.NOT_FOUND;
-                case 500:
-                    return DeleteContainerRes.INTERNAL_SERVER_ERROR;
-            }
-            console.log(error.message);
+            return {
+                type: "Err",
+                error: fromNumber(error.response?.status || 0),
+            };
         }
     }
-    return DeleteContainerRes.UNKNOWN;
+    return { type: "Err", error: ServiceError.Unknown };
 };
 
 const GetContainerInfo = async (
     containerId: string
-): Promise<[InfoContainerRes, ContainerRes | null]> => {
+): Promise<Result<ContainerInfo, ServiceError>> => {
     try {
         const response = await axios.get(
             `${API_URL}/container/info?id=${containerId}`
         );
         switch (response.status) {
             case 200:
-                return [InfoContainerRes.OK, response.data];
+                return { type: "Ok", value: response.data };
             case 204:
-                return [InfoContainerRes.NO_CONTENT, null];
+                return { type: "Err", error: ServiceError.NoContent };
         }
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            switch (error.response?.status) {
-                case 401:
-                    return [InfoContainerRes.UNAUTHORIZED, null];
-                case 500:
-                    return [InfoContainerRes.INTERNAL_SERVER_ERROR, null];
-            }
+            return {
+                type: "Err",
+                error: fromNumber(error.response?.status || 0),
+            };
         }
     }
-    return [InfoContainerRes.UNKNOWN, null];
+    return { type: "Err", error: ServiceError.Unknown };
 };
 
-export enum ContainerImageOptRes {
-    OK = 200,
-    NO_CONTENT = 204,
-    UNAUTHORIZED = 401,
-    INTERNAL_SERVER_ERROR = 500,
-    UNKNOWN = 0,
-}
-
 const GetValidImages = async (): Promise<
-    [ContainerImageOpt[] | null, ContainerImageOptRes]
+    Result<ContainerImageOpt[], ServiceError>
 > => {
     try {
         const response = await axios.get(`${API_URL}/images`);
         switch (response.status) {
             case 200:
-                return [response.data, ContainerImageOptRes.OK];
+                return { type: "Ok", value: response.data };
             case 204:
-                return [null, ContainerImageOptRes.NO_CONTENT];
-            case 401:
-                return [null, ContainerImageOptRes.UNAUTHORIZED];
-            case 500:
-                return [null, ContainerImageOptRes.INTERNAL_SERVER_ERROR];
+                return { type: "Err", error: ServiceError.NoContent };
         }
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            switch (error.response?.status) {
-                case 401:
-                    return [null, ContainerImageOptRes.UNAUTHORIZED];
-                case 500:
-                    return [null, ContainerImageOptRes.INTERNAL_SERVER_ERROR];
-            }
+            return {
+                type: "Err",
+                error: fromNumber(error.response?.status || 0),
+            };
         }
     }
-    return [null, ContainerImageOptRes.UNKNOWN];
+    return { type: "Err", error: ServiceError.Unknown };
 };
 
-const FullStop = async (): Promise<boolean> => {
+const FullStop = async (): Promise<Result<null, ServiceError>> => {
     try {
         const response = await axios.post(`${API_URL}/containers/fullstop`);
-        return response.status === 200;
+        if (response.status == 200) {
+            return { type: "Ok", value: null };
+        }
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            console.log(error.message);
+            return {
+                type: "Err",
+                error: fromNumber(error.response?.status || 0),
+            };
         }
     }
-    return false;
+    return { type: "Err", error: ServiceError.Unknown };
 };
-
-export enum ResizeRes {
-    OK = 200,
-    NO_CONTENT = 204,
-    UNAUTHORIZED = 401,
-    INTERNAL_SERVER_ERROR = 500,
-    UNKNOWN = 0,
-}
 
 const ResizeContainer = async (
     width: number,
     height: number,
     id: string
-): Promise<ResizeRes> => {
+): Promise<Result<null, ServiceError>> => {
     try {
         const response = await axios.get(
             `${API_URL}/container/resize?id=${id}&width=${width}&height=${height}`
         );
         switch (response.status) {
             case 200:
-                return ResizeRes.OK;
+                return { type: "Ok", value: null };
             case 204:
-                return ResizeRes.NO_CONTENT;
-            case 401:
-                return ResizeRes.UNAUTHORIZED;
-            case 500:
-                return ResizeRes.INTERNAL_SERVER_ERROR;
+                return { type: "Err", error: ServiceError.NoContent };
         }
     } catch (err) {
         if (isAxiosError(err)) {
-            switch (err.response?.status) {
-                case 401:
-                    return ResizeRes.UNAUTHORIZED;
-                case 500:
-                    return ResizeRes.INTERNAL_SERVER_ERROR;
-            }
+            return {
+                type: "Err",
+                error: fromNumber(err.response?.status || 0),
+            };
         }
     }
-    return ResizeRes.UNKNOWN;
+    return { type: "Err", error: ServiceError.Unknown };
 };
 
 export {

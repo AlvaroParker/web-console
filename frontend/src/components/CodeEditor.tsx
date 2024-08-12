@@ -1,13 +1,14 @@
-import { Editor, Monaco } from "@monaco-editor/react";
+import { Editor } from "@monaco-editor/react";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import monaco from "monaco-editor";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { RunCode, RunCodeRes } from "../services/code";
+import { RunCode } from "../services/code";
 import { TopBar } from "./TopBar";
 import { LoadTerminal, checkAuth } from "./util";
+import { ServiceError } from "../services/error";
 
 export function CodeEditor() {
   const didAuth = useRef(false);
@@ -22,7 +23,6 @@ export function CodeEditor() {
 
   function handleEditorDidMount(
     editor: monaco.editor.IStandaloneCodeEditor,
-    _: Monaco
   ) {
     editorRef.current = editor;
   }
@@ -49,37 +49,40 @@ export function CodeEditor() {
         fitAddon.current = fit;
       });
     }
-  }, []);
+  }, [navigate]);
 
   const clearScreen = () => {
     terminal.current?.clear();
   };
 
   const handleRunCode = async () => {
-    const [data, response] = await RunCode(content, lang);
-    switch (response) {
-      case RunCodeRes.UNAUTHORIZED:
-        navigate("/login");
-        break;
-      case RunCodeRes.OK:
-        if (terminal.current) {
-          terminal.current.write("\r\n");
-          terminal.current.write(data);
-          terminal.current.write("\r\n");
-        }
-        break;
-      default:
-        const RED = "\x1b[31m";
-        const RESET = "\x1b[0m";
-        if (terminal.current) {
-          terminal.current.write("\r\n");
-          terminal.current.write(
-            `${RED}   Error while running code. Try again later   ${RESET}`
-          );
-          terminal.current.write("\r\n");
-        }
-        console.log("Error running code");
-        break;
+    const RED = "\x1b[31m";
+    const RESET = "\x1b[0m";
+    const result = await RunCode(content, lang);
+    if (result.type === "Ok") {
+      // There's data in result
+      if (terminal.current) {
+        terminal.current.write("\r\n");
+        terminal.current.write(result.value);
+        terminal.current.write("\r\n");
+      }
+    } else {
+      switch (result.error) {
+        case ServiceError.Unauthorized:
+          navigate("/login");
+          break;
+        default:
+          if (terminal.current) {
+            terminal.current.write("\r\n");
+            terminal.current.write(
+              `${RED}   Error while running code. Try again later   ${RESET}`
+            );
+            terminal.current.write("\r\n");
+          }
+          console.log("Error running code");
+          break;
+
+      }
     }
   };
 
@@ -139,8 +142,8 @@ export function CodeEditor() {
               height="100%" // Set height to 100% to fill parent vertically
               defaultValue="// Add some code here!"
               theme="vs-dark"
-              onMount={handleEditorDidMount}
-              onChange={(value, _) => setContent(value ?? "")}
+              onMount={(editor) => handleEditorDidMount(editor)}
+              onChange={(value) => setContent(value ?? "")}
               value={content}
             />
           </div>

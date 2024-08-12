@@ -1,7 +1,8 @@
 import axios, { isAxiosError } from "axios";
 
 import { API_URL } from "./consts";
-import { ContainerRes } from "./container";
+import { ContainerInfo } from "./container";
+import { Result, ServiceError, fromNumber } from "./error";
 
 // axios allow CORS by default
 axios.defaults.withCredentials = true;
@@ -9,7 +10,7 @@ axios.defaults.withCredentials = true;
 const Login = async (
     email: string,
     password: string
-): Promise<Boolean | Error> => {
+): Promise<Result<null, ServiceError>> => {
     try {
         const response = await axios.post(`${API_URL}/login`, {
             email,
@@ -17,15 +18,18 @@ const Login = async (
         });
 
         if (response.status === 200) {
-            return true;
+            return { type: "Ok", value: null };
         }
-        return false;
+        return { type: "Err", error: ServiceError.Unknown };
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            console.log(error.message);
+            return {
+                type: "Err",
+                error: fromNumber(error.response?.status || 0),
+            };
         }
     }
-    return false;
+    return { type: "Err", error: ServiceError.Unknown };
 };
 
 const Signin = async (
@@ -33,7 +37,7 @@ const Signin = async (
     password: string,
     name: string,
     lastname: string
-): Promise<Boolean> => {
+): Promise<Result<null, ServiceError>> => {
     try {
         const response = await axios.post(`${API_URL}/signin`, {
             email,
@@ -41,68 +45,52 @@ const Signin = async (
             name,
             lastname,
         });
-
         if (response.status === 201 || response.status === 200) {
-            return true;
+            return { type: "Ok", value: null };
         }
-        return false;
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            console.log(error.message);
+            return {
+                type: "Err",
+                error: fromNumber(error.response?.status || 0),
+            };
         }
     }
-    return false;
+    return { type: "Err", error: ServiceError.Unknown };
 };
 
-const AuthCheck = async (): Promise<Boolean> => {
+const AuthCheck = async (): Promise<Result<null, ServiceError>> => {
     try {
         const response = await axios.get(`${API_URL}/auth`);
         if (response.status === 200) {
-            return true;
+            return { type: "Ok", value: null };
         }
-        return false;
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            console.log(error.message);
+            return {
+                type: "Err",
+                error: fromNumber(error.response?.status || 0),
+            };
         }
     }
-    return false;
+    return { type: "Err", error: ServiceError.Unknown };
 };
 
-export enum LogoutRes {
-    OK = 200,
-    INTERNAL_SERVER_ERROR = 500,
-    UNAUTHORIZED = 401,
-    UNKNOWN = 0,
-}
-
-const LogOut = async (): Promise<LogoutRes> => {
+const LogOut = async (): Promise<Result<null, ServiceError>> => {
     try {
         const response = await axios.post(`${API_URL}/logout`);
-        switch (response.status) {
-            case 200:
-                return LogoutRes.OK;
-            case 500:
-                return LogoutRes.INTERNAL_SERVER_ERROR;
-            case 401:
-                return LogoutRes.UNAUTHORIZED;
-            default:
-                return LogoutRes.UNKNOWN;
+        if (response.status == 200) {
+            return { type: "Ok", value: null };
         }
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            console.log(error.message);
-            switch (error.response?.status) {
-                case 500:
-                    return LogoutRes.INTERNAL_SERVER_ERROR;
-                case 401:
-                    return LogoutRes.UNAUTHORIZED;
-                default:
-                    return LogoutRes.UNKNOWN;
-            }
+            return {
+                type: "Err",
+                error: fromNumber(error.response?.status || 0),
+            };
         }
     }
-    return LogoutRes.UNKNOWN;
+    return { type: "Err", error: ServiceError.Unknown };
 };
 
 export interface UserInfoPayload {
@@ -110,43 +98,24 @@ export interface UserInfoPayload {
     lastname: string;
     email: string;
     active_containers: number;
-    running_containers: Array<ContainerRes>;
+    running_containers: Array<ContainerInfo>;
 }
 
-export enum UserInfoRes {
-    OK = 200,
-    INTERNAL_SERVER_ERROR = 500,
-    UNAUTHORIZED = 401,
-    UNKNOWN = 0,
-}
-
-const UserInfo = async (): Promise<[UserInfoPayload | null, UserInfoRes]> => {
+const UserInfo = async (): Promise<Result<UserInfoPayload, ServiceError>> => {
     try {
         const response = await axios.get(`${API_URL}/user/info`);
-        switch (response.status) {
-            case 200:
-                return [response.data, UserInfoRes.OK];
-            case 500:
-                return [null, UserInfoRes.INTERNAL_SERVER_ERROR];
-            case 401:
-                return [null, UserInfoRes.UNAUTHORIZED];
-            default:
-                return [null, UserInfoRes.UNKNOWN];
+        if (response.status == 200) {
+            return { type: "Ok", value: response.data };
         }
     } catch (error) {
         if (isAxiosError(error)) {
-            console.log(error.message);
-            switch (error.response?.status) {
-                case 500:
-                    return [null, UserInfoRes.INTERNAL_SERVER_ERROR];
-                case 401:
-                    return [null, UserInfoRes.UNAUTHORIZED];
-                default:
-                    return [null, UserInfoRes.UNKNOWN];
-            }
+            return {
+                type: "Err",
+                error: fromNumber(error.response?.status || 0),
+            };
         }
     }
-    return [null, UserInfoRes.UNKNOWN];
+    return { type: "Err", error: ServiceError.Unknown };
 };
 
 export { Login, Signin, AuthCheck, LogOut, UserInfo };

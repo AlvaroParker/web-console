@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { FullStop } from "../services/container";
-import { UserInfo, UserInfoPayload, UserInfoRes } from "../services/users";
+import { ServiceError } from "../services/error";
+import { UserInfo, UserInfoPayload } from "../services/users";
 
 export function UserComponent() {
   const [userInfo, setUserInfo] = useState<UserInfoPayload | null>(null);
@@ -14,11 +15,13 @@ export function UserComponent() {
   useEffect(() => {
     if (!didRequest.current) {
       didRequest.current = true;
-      UserInfo().then(([userInfo, res]) => {
-        if (res === UserInfoRes.OK) {
-          setUserInfo(userInfo);
-        } else if (res == UserInfoRes.UNAUTHORIZED) {
-          navigate("/login");
+      UserInfo().then((response) => {
+        if (response.type === "Ok") {
+          setUserInfo(response.value);
+        } else if (response.type === "Err") {
+          if (response.error === ServiceError.Unauthorized) {
+            navigate("/login");
+          }
         }
       });
     }
