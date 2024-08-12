@@ -224,5 +224,4 @@ func GetContainersId(email string) ([]string, error) {
 		ids = append(ids, containerID)
 	}
 	return ids, nil
-
 }
