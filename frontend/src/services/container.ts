@@ -1,9 +1,5 @@
-import axios, { isAxiosError } from "axios";
-
-import { API_URL } from "./consts";
+import axios from "./axios";
 import { Result, ServiceError, fromNumber } from "./error";
-
-axios.defaults.withCredentials = true;
 
 export interface ContainerImageOpt {
     image_tag: string;
@@ -30,7 +26,7 @@ const CreateContainer = async (
     container: Container
 ): Promise<Result<null, ServiceError>> => {
     try {
-        const response = await axios.post(`${API_URL}/container`, container);
+        const response = await axios.post(`/container`, container);
         switch (response.status) {
             case 201 || 200:
                 return { type: "Ok", value: null };
@@ -51,7 +47,7 @@ const ListContainers = async (): Promise<
     Result<ContainerInfo[], ServiceError>
 > => {
     try {
-        const response = await axios.get(`${API_URL}/container`);
+        const response = await axios.get(`/container`);
         switch (response.status) {
             case 200:
                 return { type: "Ok", value: response.data };
@@ -73,9 +69,7 @@ const DeleteContainer = async (
     containerId: string
 ): Promise<Result<null, ServiceError>> => {
     try {
-        const response = await axios.delete(
-            `${API_URL}/container/${containerId}`
-        );
+        const response = await axios.delete(`/container/${containerId}`);
         if (response.status === 200) return { type: "Ok", value: null };
     } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -92,9 +86,7 @@ const GetContainerInfo = async (
     containerId: string
 ): Promise<Result<ContainerInfo, ServiceError>> => {
     try {
-        const response = await axios.get(
-            `${API_URL}/container/info?id=${containerId}`
-        );
+        const response = await axios.get(`/container/info?id=${containerId}`);
         switch (response.status) {
             case 200:
                 return { type: "Ok", value: response.data };
@@ -116,7 +108,7 @@ const GetValidImages = async (): Promise<
     Result<ContainerImageOpt[], ServiceError>
 > => {
     try {
-        const response = await axios.get(`${API_URL}/images`);
+        const response = await axios.get(`/images`);
         switch (response.status) {
             case 200:
                 return { type: "Ok", value: response.data };
@@ -136,7 +128,7 @@ const GetValidImages = async (): Promise<
 
 const FullStop = async (): Promise<Result<null, ServiceError>> => {
     try {
-        const response = await axios.post(`${API_URL}/containers/fullstop`);
+        const response = await axios.post(`/containers/fullstop`);
         if (response.status == 200) {
             return { type: "Ok", value: null };
         }
@@ -158,7 +150,7 @@ const ResizeContainer = async (
 ): Promise<Result<null, ServiceError>> => {
     try {
         const response = await axios.get(
-            `${API_URL}/container/resize?id=${id}&width=${width}&height=${height}`
+            `/container/resize?id=${id}&width=${width}&height=${height}`
         );
         switch (response.status) {
             case 200:
@@ -167,7 +159,7 @@ const ResizeContainer = async (
                 return { type: "Err", error: ServiceError.NoContent };
         }
     } catch (err) {
-        if (isAxiosError(err)) {
+        if (axios.isAxiosError(err)) {
             return {
                 type: "Err",
                 error: fromNumber(err.response?.status || 0),

@@ -1,18 +1,13 @@
-import axios, { isAxiosError } from "axios";
-
-import { API_URL } from "./consts";
+import axios from "./axios";
 import { ContainerInfo } from "./container";
 import { Result, ServiceError, fromNumber } from "./error";
-
-// axios allow CORS by default
-axios.defaults.withCredentials = true;
 
 const Login = async (
     email: string,
     password: string
 ): Promise<Result<null, ServiceError>> => {
     try {
-        const response = await axios.post(`${API_URL}/login`, {
+        const response = await axios.post(`/login`, {
             email,
             password,
         });
@@ -39,7 +34,7 @@ const Signin = async (
     lastname: string
 ): Promise<Result<null, ServiceError>> => {
     try {
-        const response = await axios.post(`${API_URL}/signin`, {
+        const response = await axios.post(`/signin`, {
             email,
             password,
             name,
@@ -61,7 +56,7 @@ const Signin = async (
 
 const AuthCheck = async (): Promise<Result<null, ServiceError>> => {
     try {
-        const response = await axios.get(`${API_URL}/auth`);
+        const response = await axios.get(`/auth`);
         if (response.status === 200) {
             return { type: "Ok", value: null };
         }
@@ -78,7 +73,7 @@ const AuthCheck = async (): Promise<Result<null, ServiceError>> => {
 
 const LogOut = async (): Promise<Result<null, ServiceError>> => {
     try {
-        const response = await axios.post(`${API_URL}/logout`);
+        const response = await axios.post(`/logout`);
         if (response.status == 200) {
             return { type: "Ok", value: null };
         }
@@ -103,12 +98,12 @@ export interface UserInfoPayload {
 
 const UserInfo = async (): Promise<Result<UserInfoPayload, ServiceError>> => {
     try {
-        const response = await axios.get(`${API_URL}/user/info`);
+        const response = await axios.get(`/user/info`);
         if (response.status == 200) {
             return { type: "Ok", value: response.data };
         }
     } catch (error) {
-        if (isAxiosError(error)) {
+        if (axios.isAxiosError(error)) {
             return {
                 type: "Err",
                 error: fromNumber(error.response?.status || 0),

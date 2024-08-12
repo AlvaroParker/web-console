@@ -11,7 +11,7 @@ import { Sidebar } from "./components/Sidebar.tsx";
 import { TerminalComponent } from "./components/Terminal.tsx";
 import { UserComponent } from "./components/User.tsx";
 import "./index.css";
-import { API_ADDRESS } from "./services/consts.ts";
+import { API_ADDRESS } from "./services/axios.ts";
 
 const router = createBrowserRouter([
   {
